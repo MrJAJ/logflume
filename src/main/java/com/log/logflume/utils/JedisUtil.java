@@ -40,7 +40,7 @@ public class JedisUtil {
             //表示jedis的服务密码
             String password = prop.getProperty(JedisConstants.JEDIS_PASSWORD);
 
-//            jedisPool = new JedisPool(poolConfig, host, port, 10000, password);
+            //jedisPool = new JedisPool(poolConfig, host, port, 10000, password);
             jedisPool = new JedisPool(poolConfig, host, port, 10000);
         } catch (IOException e) {
             e.printStackTrace();

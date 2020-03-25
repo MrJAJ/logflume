@@ -50,12 +50,12 @@ public class LogConvertBolt extends BaseRichBolt {
             return;
         }
         String tempString = input.getStringByField("log");
+        String level = input.getStringByField("level");
 
         if(tempString.equals("")){ return;}
         tempString = tempString.replaceAll("[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}：[0-9]{2}：[0-9]{2}(：[0-9]{3})?", "");
         if(input.getStringByField("logClass").startsWith("com.ism")) {
-            tempString = tempString.replaceAll("[0-9a-zA-Z_-]+", "#");
-
+            tempString = tempString.replaceAll("[0-9a-zA-Z_-]+", "");
         }
         tempString=tempString.trim();
         Jedis jedis = JedisUtil.getJedis();
@@ -79,8 +79,10 @@ public class LogConvertBolt extends BaseRichBolt {
                 if(!tempString.equals(c)&&!oldLevelStr.contains(tempString)) {
                     jedis.hset("ClusterCate", c, oldLevelStr + "\n" + tempString + "  " + score);
                 }
-
-                jedis.zincrby("ClusterRank:"+dayStr,1,c);
+                jedis.zincrby("ClusterRank:" + dayStr, 1, c);
+                if(level.equals("ERROR")) {
+                    jedis.zincrby("ErrorClusterRank:" + dayStr, 1, c);
+                }
                 jedis.close();
                 this.collector.emit(new Values(tempString,1));
                 collector.ack(input);
@@ -92,7 +94,10 @@ public class LogConvertBolt extends BaseRichBolt {
         jedis.hset("ClusterCate",tempString,tempString+" 1.0");
         jedis.hset(tempString, dateStr, "1");
         jedis.hset(tempString, dayStr, "1");
-        jedis.zincrby("ClusterRank:"+dayStr,1,tempString);
+        if(level.equals("ERROR")) {
+            jedis.zincrby("ErrorClusterRank:" + dayStr, 1, tempString);
+        }
+        jedis.zincrby("ClusterRank:" + dayStr, 1, tempString);
 
         jedis.close();
         this.collector.emit(new Values(tempString,1));
