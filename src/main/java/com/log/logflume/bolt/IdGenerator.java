@@ -1,4 +1,4 @@
-package com.log.logflume.utils;
+package com.log.logflume.bolt;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +26,7 @@ public class IdGenerator {
 
 	}
 
-	private IdGenerator(List<Pair<JedisPool, String>> jedisPoolList,
+	public IdGenerator(List<Pair<JedisPool, String>> jedisPoolList,
 			int retryTimes) {
 		this.jedisPoolList = jedisPoolList;
 		this.retryTimes = retryTimes;

@@ -9,49 +9,64 @@ import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ExtractBolt extends BaseRichBolt {
     /**
      * kafkaSpout发送的字段名为bytes
      */
     private OutputCollector collector;
-    static AtomicInteger id=new AtomicInteger();
 
     @Override
     public void prepare(Map map, TopologyContext topologyContext, OutputCollector outputCollector) {
         this.collector=outputCollector;
-        id.getAndSet(0);
     }
     @Override
     public void execute(Tuple input) {
         byte[] binary = input.getBinary(0); // 跨jvm传输数据，接收到的是字节数据
-        String line = new String(binary).replace("\r","");
-        if (line.equals("") || line.indexOf(" : ") == -1) {
-            System.out.println(line);
+        //ID生成
+        IdGenerator idGenerator = IdGenerator.builder()
+                .addHost("133.133.135.38", 6379, "c5809078fa6d652e0b0232d552a9d06d37fe819c")
+//				.addHost("127.0.0.1", 7379, "accb7a987d4fb0fd85c57dc5a609529f80ec3722")
+//				.addHost("127.0.0.1", 8379, "f55f781ca4a00a133728488e15a554c070b17255")
+                .build();
+
+        //正则提取表达式
+        String timeRex="(\\d+-\\d+-\\d+\\s\\d+:\\d+:\\d+.\\d+)\\s";
+        String extraRex="(\\S+)\\s\\d+\\s---\\s\\[([^\\]]*)\\]\\s+(\\S+)";
+        String messageRex=":\\s(.*)";
+        String[] rexs=new String[]{timeRex,extraRex,messageRex};
+
+        String line = new String(binary);
+        if (line.equals("")) {
             return;
         }
-        String[] vars = line.split(" : ")[0].split(" ");
-        if(vars.length<4){
-            System.out.println(line);
-            return;
+        String [] result=new String[rexs.length];
+        for(int i=0;i<rexs.length;i++) {
+            Pattern pattern = Pattern.compile(rexs[i]);
+            Matcher matcher = pattern.matcher(line);
+            if(!matcher.find()){return;};
+            if(i<=rexs.length-1){
+                result[i]=matcher.group();
+            }else{
+                result[i]=matcher.group(1);
+            }
         }
-        String time=vars[0]+" "+vars[1];
-        String level=vars[2];
-        String logClass=vars[vars.length-1];
-        String detail = line.split(" : ")[1].replaceAll("[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}：[0-9]{2}：[0-9]{2}(：[0-9]{3})?", "");
-        System.out.println(id.incrementAndGet()+" "+time+" "+level+" "+logClass+" "+detail);
-        if(id.get()<10) {
-            collector.emit(new Values( level, 1));
-            collector.ack(input);
-        }else {
-            return;
-        }
+        long id = idGenerator.next("log");
+        String time=result[0];
+        String param=result[1];
+        String message=result[2];
+
+        //String detail = line.split(" : ")[1].replaceAll("[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}：[0-9]{2}：[0-9]{2}(：[0-9]{3})?", "");
+        System.out.println(id+"\t"+time+"\t"+param+"\t"+message);
+        collector.emit(new Values( id,time,param,message));
+        collector.ack(input);
     }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declare(new Fields("level", "count"));
+        declarer.declare(new Fields("id","time","param", "message"));
     }
 
 }

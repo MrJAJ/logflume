@@ -1,6 +1,7 @@
 package com.log.logflume.topology;
 
 import com.log.logflume.bolt.ExtractBolt;
+import kafka.api.OffsetRequest;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.StormSubmitter;
@@ -43,11 +44,11 @@ public class StatisticTopology {
                 .withCounterFields(new Fields("count"))
                 .withColumnFamily("base_info");
 
-        builder.setBolt("spliteBolt", new ExtractBolt()).shuffleGrouping("id_kafka_spout");
+        builder.setBolt("extractBolt", new ExtractBolt()).shuffleGrouping("id_kafka_spout");
 
-        HBaseBolt hbaseBolt = new HBaseBolt("t_log_info", mapper)
-                .withConfigKey("hbase.conf");//如果没有withConfigKey会报错
-        builder.setBolt("HBaseBolt", hbaseBolt).shuffleGrouping("spliteBolt");
+        //HBaseBolt hbaseBolt = new HBaseBolt("t_log_info", mapper)
+           //     .withConfigKey("hbase.conf");//如果没有withConfigKey会报错
+        //builder.setBolt("HBaseBolt", hbaseBolt).shuffleGrouping("extractBolt");
 
         //builder.setBolt("id_myKafa_bolt", new MyKafkaBolt()).shuffleGrouping("id_kafka_spout");
 
