@@ -1,7 +1,6 @@
 package com.log.logflume.topology;
 
-import com.log.logflume.utils.JedisUtil;
-import kafka.api.OffsetRequest;
+import com.log.logflume.bolt.ExtractBolt;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.StormSubmitter;
@@ -12,70 +11,16 @@ import org.apache.storm.kafka.BrokerHosts;
 import org.apache.storm.kafka.KafkaSpout;
 import org.apache.storm.kafka.SpoutConfig;
 import org.apache.storm.kafka.ZkHosts;
-import org.apache.storm.task.OutputCollector;
-import org.apache.storm.task.TopologyContext;
-import org.apache.storm.topology.BasicOutputCollector;
-import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.TopologyBuilder;
-import org.apache.storm.topology.base.BaseBasicBolt;
-import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Fields;
-import org.apache.storm.tuple.Tuple;
-import org.apache.storm.tuple.Values;
-import redis.clients.jedis.Jedis;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 构建topology
  */
 public class StatisticTopology {
-    static class MyKafkaBolt extends BaseRichBolt {
-
-        /**
-         * kafkaSpout发送的字段名为bytes
-         */
-        private OutputCollector collector;
-        static AtomicInteger id=new AtomicInteger();
-
-        @Override
-        public void prepare(Map map, TopologyContext topologyContext, OutputCollector outputCollector) {
-            this.collector=outputCollector;
-            id.getAndSet(0);
-        }
-        @Override
-        public void execute(Tuple input) {
-            byte[] binary = input.getBinary(0); // 跨jvm传输数据，接收到的是字节数据
-            String line = new String(binary).replace("\r","");
-            if (line.equals("") || line.indexOf(" : ") == -1) {
-                System.out.println(line);
-                return;
-            }
-            String[] vars = line.split(" : ")[0].split(" ");
-            if(vars.length<4){
-                System.out.println(line);
-                return;
-            }
-            String time=vars[0]+" "+vars[1];
-            String level=vars[2];
-            String logClass=vars[vars.length-1];
-            String detail = line.split(" : ")[1].replaceAll("[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}：[0-9]{2}：[0-9]{2}(：[0-9]{3})?", "");
-            System.out.println(id.incrementAndGet()+" "+time+" "+level+" "+logClass+" "+detail);
-            if(id.get()<10) {
-                collector.emit(new Values( level, 1));
-                collector.ack(input);
-            }else {
-                return;
-            }
-        }
-
-        @Override
-        public void declareOutputFields(OutputFieldsDeclarer declarer) {
-            declarer.declare(new Fields("level", "count"));
-        }
-    }
 
     public static void main(String[] args) throws Exception {
         TopologyBuilder builder = new TopologyBuilder();
@@ -98,7 +43,7 @@ public class StatisticTopology {
                 .withCounterFields(new Fields("count"))
                 .withColumnFamily("base_info");
 
-        builder.setBolt("spliteBolt", new MyKafkaBolt()).shuffleGrouping("id_kafka_spout");
+        builder.setBolt("spliteBolt", new ExtractBolt()).shuffleGrouping("id_kafka_spout");
 
         HBaseBolt hbaseBolt = new HBaseBolt("t_log_info", mapper)
                 .withConfigKey("hbase.conf");//如果没有withConfigKey会报错
