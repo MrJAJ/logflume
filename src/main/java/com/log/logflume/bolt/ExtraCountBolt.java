@@ -16,7 +16,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.Set;
 
-public class CountBolt extends BaseRichBolt {
+public class ExtraCountBolt extends BaseRichBolt {
     /**
      * kafkaSpout发送的字段名为bytes
      */
@@ -52,17 +52,25 @@ public class CountBolt extends BaseRichBolt {
         String[] params=param.split("\\s");
 
         Jedis jedis = JedisUtil.getJedis();
+//日志量变化
+        updateData(jedis,"LogNum",dayStr);
+        updateData(jedis,"LogNum",hourStr);
+
         for(int i=0;i<params.length;i++){
-            jedis.sadd("extras",params[i]);
+            jedis.sadd("extras","params"+i);
+            jedis.sadd("params"+i,params[i]);
             updateData(jedis,params[i],hourStr);
             updateData(jedis,params[i],dayStr);
         }
         System.out.println(id+"\t"+"message：\t"+message);
-        Set<String> p=jedis.smembers("extras");
-        for(String s:p){
-            collector.emit(new Values( s,dayStr,jedis.hget(s,dayStr),hourStr,jedis.hget(s,hourStr)));
-            collector.ack(input);
-            System.out.println("Hbase save"+s+dayStr+"\t"+jedis.hget(s,dayStr)+"\t"+hourStr+"\t"+jedis.hget(s,hourStr));
+        Set<String> ex=jedis.smembers("extras");
+        for(String pa:ex){
+            Set<String> p=jedis.smembers(pa);
+            for(String s:p) {
+                collector.emit(new Values(s, dayStr, jedis.hget(s, dayStr), hourStr, jedis.hget(s, hourStr)));
+                collector.ack(input);
+                System.out.println("Hbase save!\t" + s + dayStr + "\t" + jedis.hget(s, dayStr) + "\t" + hourStr + "\t" + jedis.hget(s, hourStr));
+            }
         }
     }
 

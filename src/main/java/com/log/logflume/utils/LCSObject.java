@@ -114,15 +114,12 @@ public class LCSObject {
 			temp = temp + s + " ";
 		}
 		
-		temp = temp + "\t"+lineIds.size();//+"\n\t参数列表:";//"\n\t\t{";
-//		for(int i : lineIds) {
-//		    if(params.get(i).size()!=0){
-//                temp = temp + params.get(i) + "\t";
-//            }
-//
-//		}
-		
-	//	return temp.substring(0, temp.length() - 2) + "}";
-        return temp;
+		temp = temp + "\t"+lineIds.size()+"\n\t参数列表:\n\t\t{";
+		for(int i : lineIds) {
+		    if(params.get(i).size()!=0){
+                temp = temp + params.get(i) + "\t";
+            }
+		}
+		return temp.substring(0, temp.length() - 2) + "}";
 	}
 }

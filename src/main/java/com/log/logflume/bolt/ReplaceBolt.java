@@ -28,25 +28,25 @@ public class ReplaceBolt extends BaseRichBolt {
     @Override
     public void execute(Tuple input) {
         long id = input.getLongByField("id");
+        String time = input.getStringByField("time");
+        String param = input.getStringByField("param");
         String message = input.getStringByField("message");
 
         //正则提取表达式
-        String timeRex="\\s(\\d+-\\d+-\\d+\\s\\d+:\\d+:\\d+.\\d+)";
-        //String extraRex="(\\S+)\\s\\d+\\s---\\s\\[([^\\]]*)\\]\\s+(\\S+)";
-        //String messageRex=":\\s(.*)";
+        String timeRex="\\s(\\d+-\\d+-\\d+\\s\\d+：\\d+：\\d+)";
         String[] rexs=new String[]{timeRex};
 
         for(int i=0;i<rexs.length;i++) {
             message=message.replaceAll(rexs[i],"");
         }
-        System.out.println(id+"\t"+"message：\t"+message);
-        collector.emit(new Values( id,message));
+        System.out.println(id+"\t"+"message："+message);
+        collector.emit(new Values( id,time,param,message));
         collector.ack(input);
     }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declare(new Fields("id", "message"));
+        declarer.declare(new Fields("id","time","param", "message"));
     }
 
 }

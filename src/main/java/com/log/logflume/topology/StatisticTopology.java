@@ -1,14 +1,12 @@
 package com.log.logflume.topology;
 
-import com.log.logflume.bolt.CountBolt;
+import com.log.logflume.bolt.ExtraCountBolt;
 import com.log.logflume.bolt.ExtractBolt;
 import com.log.logflume.bolt.ReplaceBolt;
-import kafka.api.OffsetRequest;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
-import org.apache.storm.hbase.bolt.HBaseBolt;
 import org.apache.storm.hbase.bolt.mapper.SimpleHBaseMapper;
 import org.apache.storm.kafka.BrokerHosts;
 import org.apache.storm.kafka.KafkaSpout;
@@ -50,7 +48,7 @@ public class StatisticTopology {
 
         builder.setBolt("replaceBolt", new ReplaceBolt(),3).shuffleGrouping("extractBolt");
 
-        builder.setBolt("countBolt", new CountBolt(),3).shuffleGrouping("extractBolt");
+        builder.setBolt("countBolt", new ExtraCountBolt(),3).shuffleGrouping("extractBolt");
 
         //HBaseBolt hbaseBolt = new HBaseBolt("t_log_info", mapper)
                 //.withConfigKey("hbase.conf");//如果没有withConfigKey会报错
