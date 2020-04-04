@@ -47,7 +47,7 @@ public class ExtractBolt extends BaseRichBolt {
             Pattern pattern = Pattern.compile(rexs[i]);
             Matcher matcher = pattern.matcher(line);
             if(!matcher.find()){return;};
-            if(i<=rexs.length-1){
+            if(i<rexs.length-1){
                 result[i]=matcher.group();
             }else{
                 result[i]=matcher.group(1);
@@ -57,9 +57,6 @@ public class ExtractBolt extends BaseRichBolt {
         String time=result[0];
         String param=result[1];
         String message=result[2];
-
-        //String detail = line.split(" : ")[1].replaceAll("[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}：[0-9]{2}：[0-9]{2}(：[0-9]{3})?", "");
-        System.out.println(id+"\t"+time+"\t"+param+"\t"+message);
         collector.emit(new Values( id,time,param,message));
         collector.ack(input);
     }
