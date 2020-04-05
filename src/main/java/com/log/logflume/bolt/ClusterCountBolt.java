@@ -34,7 +34,6 @@ public class ClusterCountBolt extends BaseRichBolt {
         long id = input.getLongByField("id");
         String time = input.getStringByField("time");
         String param = input.getStringByField("param");
-        String message = input.getStringByField("message");
         String c = input.getStringByField("cluster");
 
         Date date=null;
@@ -51,13 +50,11 @@ public class ClusterCountBolt extends BaseRichBolt {
 
         //正则提取表达式
         String[] params=param.split("\\s");
-
+        updateData(c,hourStr);
+        updateData(c,dayStr);
+        updateData("ClusterNum",c);
         Jedis jedis = JedisUtil.getJedis();
         Set<String> clu=jedis.smembers("Clusters");
-        updateData(jedis,c,hourStr);
-        updateData(jedis,c,dayStr);
-        updateData(jedis,"ClusterNum",c);
-
         String oldLevelStr = jedis.hget("ClusterCate", c);
         if (oldLevelStr == null) {
             oldLevelStr = ""+id;
@@ -69,19 +66,21 @@ public class ClusterCountBolt extends BaseRichBolt {
         if(param.contains("ERROR")) {
             jedis.zincrby("ErrorClusterRank:" + dayStr, 1, c);
         }
-
+        jedis.close();
     }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declare(new Fields("param", "dayStr","dayCount", "hourStr", "hourCount"));
     }
-    public synchronized void updateData(Jedis jedis, String key, String dateStr){
+    public synchronized void updateData(String key, String dateStr){
+        Jedis jedis = JedisUtil.getJedis();
         String oldLevelStr = jedis.hget(key, dateStr);
         if (oldLevelStr == null) {
             oldLevelStr = "0";
         }
         int oldLevel = Integer.valueOf(oldLevelStr);
         jedis.hset(key, dateStr, oldLevel + 1 + "");
+        jedis.close();
     }
 }

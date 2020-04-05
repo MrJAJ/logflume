@@ -33,13 +33,15 @@ public class ReplaceBolt extends BaseRichBolt {
         String message = input.getStringByField("message");
 
         //正则提取表达式
-        String timeRex="\\s(\\d+-\\d+-\\d+\\s\\d+：\\d+：\\d+)";
-        String[] rexs=new String[]{timeRex};
+        String timeRex="(\\d+-\\d+-\\d+\\s\\d+：\\d+：\\d+：\\d+)\\s";
+        String timeRex2="(\\d+-\\d+-\\d+\\s\\d+：\\d+：\\d+)";
+
+        String[] rexs=new String[]{timeRex,timeRex2};
 
         for(int i=0;i<rexs.length;i++) {
             message=message.replaceAll(rexs[i],"");
         }
-        System.out.println(id+"\t"+"message："+message);
+        //System.out.println(id+"\t"+"message："+message);
         collector.emit(new Values( id,time,param,message));
         collector.ack(input);
     }

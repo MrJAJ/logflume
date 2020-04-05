@@ -55,8 +55,8 @@ public class SpliteSimBolt extends BaseRichBolt {
         Set<String> clu=jedis.smembers("Clusters");
         for(String c:clu){
             score=cos.similarScore(message,c);
-            if(score>0.85){
-                this.collector.emit(new Values(id,time,param,message,c));
+            if(score>0.5){
+                this.collector.emit(new Values(id,time,param,message,c,1));
                 collector.ack(input);
                 return;
             }
@@ -76,15 +76,7 @@ public class SpliteSimBolt extends BaseRichBolt {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declare(new Fields("id","time","param","message","cluster"));
+        declarer.declare(new Fields("id","time","param","message","cluster","count"));
     }
 
-    public synchronized void updateData(Jedis jedis, String key, String dateStr){
-        String oldLevelStr = jedis.hget(key, dateStr);
-        if (oldLevelStr == null) {
-            oldLevelStr = "0";
-        }
-        int oldLevel = Integer.valueOf(oldLevelStr);
-        jedis.hset(key, dateStr, oldLevel + 1 + "");
-    }
 }

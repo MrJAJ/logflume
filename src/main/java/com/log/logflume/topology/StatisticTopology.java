@@ -1,12 +1,11 @@
 package com.log.logflume.topology;
 
-import com.log.logflume.bolt.ExtraCountBolt;
-import com.log.logflume.bolt.ExtractBolt;
-import com.log.logflume.bolt.ReplaceBolt;
+import com.log.logflume.bolt.*;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
+import org.apache.storm.hbase.bolt.HBaseBolt;
 import org.apache.storm.hbase.bolt.mapper.SimpleHBaseMapper;
 import org.apache.storm.kafka.BrokerHosts;
 import org.apache.storm.kafka.KafkaSpout;
@@ -38,36 +37,36 @@ public class StatisticTopology {
         KafkaSpout kafkaSpout = createKafkaSpout();
         //业务计算
         builder.setSpout("id_kafka_spout", kafkaSpout);
-        SimpleHBaseMapper mapper = new SimpleHBaseMapper()
-                .withRowKeyField("level")
-                .withColumnFields(new Fields("level"))
-                .withCounterFields(new Fields("count"))
-                .withColumnFamily("base_info");
+
+        SimpleHBaseMapper logmapper = new SimpleHBaseMapper()
+                .withRowKeyField("id")
+                .withColumnFields(new Fields("time","param","message","log"))
+                .withColumnFamily("baseInfo");
+
+        SimpleHBaseMapper logclumapper = new SimpleHBaseMapper()
+                .withRowKeyField("id")
+                .withColumnFields(new Fields("cluster","model","param"))
+                .withColumnFamily("extraInfo");
 
         builder.setBolt("extractBolt", new ExtractBolt(),2).shuffleGrouping("id_kafka_spout");
 
-        builder.setBolt("replaceBolt", new ReplaceBolt(),3).shuffleGrouping("extractBolt");
+        builder.setBolt("replaceBolt", new ReplaceBolt(),2).shuffleGrouping("extractBolt");
 
-        builder.setBolt("countBolt", new ExtraCountBolt(),3).shuffleGrouping("extractBolt");
+        HBaseBolt logHbaseBolt = new HBaseBolt("logInfo", logmapper).withConfigKey("hbase.conf");
+        builder.setBolt("logHBaseBolt", logHbaseBolt).shuffleGrouping("extractBolt");
 
-        //HBaseBolt hbaseBolt = new HBaseBolt("t_log_info", mapper)
-                //.withConfigKey("hbase.conf");//如果没有withConfigKey会报错
-        //builder.setBolt("HBaseBolt", hbaseBolt).shuffleGrouping("extractBolt");
+        builder.setBolt("extraCountBolt", new ExtraCountBolt(),3).shuffleGrouping("extractBolt");
 
-        //builder.setBolt("id_myKafa_bolt", new MyKafkaBolt()).shuffleGrouping("id_kafka_spout");
+        builder.setBolt("spliteSimBolt", new SpliteSimBolt(),3).shuffleGrouping("replaceBolt");
 
-        //builder.setBolt("id_convertIp_bolt", new ConvertIPBolt()).shuffleGrouping("id_kafka_spout"); // 通过不同的数据流转方式，来指定数据的上游组件
-        //builder.setBolt("id_statistic_bolt", new StatisticBolt()).shuffleGrouping("id_convertIp_bolt"); // 通过不同的数据流转方式，来指定数据的上游组件
+        builder.setBolt("clusterCountBolt", new ClusterCountBolt(),3).shuffleGrouping("spliteSimBolt");
 
-        //web
-        //KafkaSpout webSpout = createWebSpout();
-        //builder.setSpout("id_web_spout", webSpout);
-        //builder.setBolt("id_web_bolt", new MyKafkaBolt()).shuffleGrouping("id_web_spout");
-        //builder.setBolt("id_webConvert_bolt", new WebConvertBolt()).shuffleGrouping("id_web_spout");
-        //builder.setBolt("id_webProcess_bolt", new WebProcessBolt()).shuffleGrouping("id_webConvert_bolt");
+        builder.setBolt("clusterSpellBolt", new ClusterSpellBolt(),4).shuffleGrouping("spliteSimBolt");
 
-        //日志聚类
-        //builder.setBolt("id_logConvert_bolt", new LogConvertBolt()).shuffleGrouping("id_convertIp_bolt");
+
+        HBaseBolt logcluHbaseBolt = new HBaseBolt("logInfo", logclumapper)
+                .withConfigKey("hbase.conf");
+        builder.setBolt("logcluHBaseBolt", logcluHbaseBolt).shuffleGrouping("clusterSpellBolt");
 
         // 使用builder构建topology
         StormTopology topology = builder.createTopology();

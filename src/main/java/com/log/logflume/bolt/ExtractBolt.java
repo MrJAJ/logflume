@@ -57,13 +57,14 @@ public class ExtractBolt extends BaseRichBolt {
         String time=result[0];
         String param=result[1];
         String message=result[2];
-        collector.emit(new Values( id,time,param,message));
+        System.out.println(id+"\t"+time+"\t"+param+"\t"+message+"\t"+line);
+        collector.emit(new Values( id,time,param,message,line));
         collector.ack(input);
     }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declare(new Fields("id","time","param", "message"));
+        declarer.declare(new Fields("id","time","param", "message","log"));
     }
 
 }
