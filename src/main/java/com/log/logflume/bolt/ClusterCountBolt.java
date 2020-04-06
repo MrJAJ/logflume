@@ -7,7 +7,6 @@ import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
-import org.apache.storm.tuple.Values;
 import redis.clients.jedis.Jedis;
 
 import java.text.ParseException;
@@ -31,7 +30,7 @@ public class ClusterCountBolt extends BaseRichBolt {
     }
     @Override
     public void execute(Tuple input) {
-        long id = input.getLongByField("id");
+        String id = input.getStringByField("id");
         String time = input.getStringByField("time");
         String param = input.getStringByField("param");
         String c = input.getStringByField("cluster");
@@ -55,13 +54,6 @@ public class ClusterCountBolt extends BaseRichBolt {
         updateData("ClusterNum",c);
         Jedis jedis = JedisUtil.getJedis();
         Set<String> clu=jedis.smembers("Clusters");
-        String oldLevelStr = jedis.hget("ClusterCate", c);
-        if (oldLevelStr == null) {
-            oldLevelStr = ""+id;
-        }
-        if(!oldLevelStr.contains(""+id)) {
-            jedis.hset("ClusterCate", c, oldLevelStr + " " + id);
-        }
         jedis.zincrby("ClusterRank:" + dayStr, 1, c);
         if(param.contains("ERROR")) {
             jedis.zincrby("ErrorClusterRank:" + dayStr, 1, c);

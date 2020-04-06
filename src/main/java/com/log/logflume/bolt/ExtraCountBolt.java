@@ -1,5 +1,4 @@
 package com.log.logflume.bolt;
-
 import com.log.logflume.utils.JedisUtil;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -7,14 +6,12 @@ import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
-import org.apache.storm.tuple.Values;
 import redis.clients.jedis.Jedis;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
-import java.util.Set;
 
 public class ExtraCountBolt extends BaseRichBolt {
     /**
@@ -31,7 +28,7 @@ public class ExtraCountBolt extends BaseRichBolt {
     }
     @Override
     public void execute(Tuple input) {
-        long id = input.getLongByField("id");
+        String id = input.getStringByField("id");
         String time = input.getStringByField("time");
         String param = input.getStringByField("param");
         String message = input.getStringByField("message");

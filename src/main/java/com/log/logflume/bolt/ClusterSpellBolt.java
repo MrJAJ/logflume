@@ -1,7 +1,6 @@
 package com.log.logflume.bolt;
 
 import com.log.logflume.utils.JedisUtil;
-import com.log.logflume.utils.LCSMap;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -13,9 +12,10 @@ import org.apdplat.word.WordSegmenter;
 import org.apdplat.word.segmentation.Word;
 import redis.clients.jedis.Jedis;
 
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public class ClusterSpellBolt extends BaseRichBolt {
     /**
@@ -32,14 +32,12 @@ public class ClusterSpellBolt extends BaseRichBolt {
     }
     @Override
     public void execute(Tuple input) {
-        long id = input.getLongByField("id");
+        String id = input.getStringByField("id");
         String time = input.getStringByField("time");
         String param = input.getStringByField("param");
         String message = input.getStringByField("message");
         String c = input.getStringByField("cluster");
 
-
-        Jedis jedis = JedisUtil.getJedis();
         String[] seq=listToArray(WordSegmenter.segWithStopWords(message));
         StringBuilder m=new StringBuilder();
         for(String tmp:seq){
@@ -47,19 +45,21 @@ public class ClusterSpellBolt extends BaseRichBolt {
         }
         String[] model=getMatch(seq,c);
         if(model==null){
+            Jedis jedis = JedisUtil.getJedis();
             String oldModels=jedis.hget("ClusterModels",c);
             oldModels=oldModels==null?"":oldModels+";";
             jedis.hset("ClusterModels",c,oldModels+m.toString());
             jedis.hset("ModelIds",m.toString(),""+id+" ");
-            jedis.hset("ModelParams",""+id,"");
             jedis.close();
             collector.emit(new Values( id,c,model,""));
             collector.ack(input);
         }else{
 
-            insert(model,""+id,message,seq,c);
-            collector.emit(new Values( id,c,jedis.hget("ClusterModels",c),jedis.hget("ModelParams",""+id)));
+            String np=insert(model,""+id,message,seq,c);
+            Jedis jedis = JedisUtil.getJedis();
+            String nm=jedis.hget("ClusterModels",c);
             jedis.close();
+            collector.emit(new Values( id,c,nm,np));
             collector.ack(input);
 
         }
@@ -125,7 +125,7 @@ public class ClusterSpellBolt extends BaseRichBolt {
 
         return count;
     }
-    public void insert(String[] model, String Id,String message,String[] seq,String c) {
+    public String insert(String[] model, String Id,String message,String[] seq,String c) {
 
 
         List<String> params=new ArrayList<>();
@@ -188,17 +188,14 @@ public class ClusterSpellBolt extends BaseRichBolt {
         }
         String oldId=jedis.hget("ModelIds",oldm.toString());
         String newModel=m.toString();
-        if(!oldModel.contains(m.toString())){
+        if(!oldModel.equals(m.toString())){
             jedis.hdel("ModelIds", oldm.toString());
             newModel=oldModel.replace(oldm.toString(),m.toString());
-        }else{
-
         }
         jedis.hset("ClusterModels",c,newModel+";");
 
-        jedis.hset("ModelIds",newModel,oldId+Id+" ");
-        jedis.hset("ModelParams",""+Id,params.size()==0?"":(params.toString()+" "));
+        jedis.hset("ModelIds",oldm.toString(),oldId+Id+" ");
         jedis.close();
-
+        return params.size()==0?"":(params.toString()+" ");
     }
 }

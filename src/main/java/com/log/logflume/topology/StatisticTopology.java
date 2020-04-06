@@ -1,6 +1,7 @@
 package com.log.logflume.topology;
 
 import com.log.logflume.bolt.*;
+
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.StormSubmitter;
@@ -24,19 +25,19 @@ public class StatisticTopology {
 
     public static void main(String[] args) throws Exception {
         TopologyBuilder builder = new TopologyBuilder();
+        //System.setProperty("hadoop.home.dir","D:\\Dev\\hadoop-3.1.2");
 
         Config config = new Config();
         Map<String, Object> hbaseConf = new HashMap<String, Object>();
-        hbaseConf.put("hbase.rootdir","hdfs://master1.hadoop.com:8020/hbase");
-        hbaseConf.put("hbase.zookeeper.quorum", "master1.hadoop.com:2181,worker1.hadoop.com:2181,worker2.hadoop.com:2181");
+        hbaseConf.put("hbase.zookeeper.quorum","master1.hadoop.com,worker1.hadoop.com,worker2.hadoop.com");
+        hbaseConf.put("zookeeper.znode.parent", "/hbase-unsecure"); // /hbase-unsecure 是你们zookeeper 的hbase存储信息的znode
+        hbaseConf.put("hbase.zookeeper.property.clientPort","2181"); // zookeeper 的端口应该大家都知道
+        hbaseConf.put("hbase.master","master1.hadoop.com:16000");
         config.put("hbase.conf",hbaseConf);
 
-        /**
-         * 设置spout和bolt的dag（有向无环图）
-         */
         KafkaSpout kafkaSpout = createKafkaSpout();
         //业务计算
-        builder.setSpout("id_kafka_spout", kafkaSpout);
+        builder.setSpout("id_kafka_spout", kafkaSpout,3);
 
         SimpleHBaseMapper logmapper = new SimpleHBaseMapper()
                 .withRowKeyField("id")
@@ -53,11 +54,11 @@ public class StatisticTopology {
         builder.setBolt("replaceBolt", new ReplaceBolt(),2).shuffleGrouping("extractBolt");
 
         HBaseBolt logHbaseBolt = new HBaseBolt("logInfo", logmapper).withConfigKey("hbase.conf");
-        builder.setBolt("logHBaseBolt", logHbaseBolt).shuffleGrouping("extractBolt");
+        builder.setBolt("logHBaseBolt", logHbaseBolt,2).shuffleGrouping("replaceBolt");
 
         builder.setBolt("extraCountBolt", new ExtraCountBolt(),3).shuffleGrouping("extractBolt");
 
-        builder.setBolt("spliteSimBolt", new SpliteSimBolt(),3).shuffleGrouping("replaceBolt");
+        builder.setBolt("spliteSimBolt", new SpliteSimBolt(),6).shuffleGrouping("replaceBolt");
 
         builder.setBolt("clusterCountBolt", new ClusterCountBolt(),3).shuffleGrouping("spliteSimBolt");
 
@@ -66,13 +67,13 @@ public class StatisticTopology {
 
         HBaseBolt logcluHbaseBolt = new HBaseBolt("logInfo", logclumapper)
                 .withConfigKey("hbase.conf");
-        builder.setBolt("logcluHBaseBolt", logcluHbaseBolt).shuffleGrouping("clusterSpellBolt");
+        builder.setBolt("logcluHBaseBolt", logcluHbaseBolt,2).shuffleGrouping("clusterSpellBolt");
 
         // 使用builder构建topology
         StormTopology topology = builder.createTopology();
         String topologyName =StatisticTopology.class.getSimpleName();   // 拓扑的名称
 
-
+        config.setNumWorkers(4);
         // 启动topology，本地启动使用LocalCluster，集群启动使用StormSubmitter
         if (args == null || args.length < 1) {  // 没有参数时使用本地模式，有参数时使用集群模式
             LocalCluster localCluster = new LocalCluster(); // 本地开发模式，创建的对象为LocalCluster
@@ -93,13 +94,11 @@ public class StatisticTopology {
         BrokerHosts hosts = new ZkHosts(brokerZkStr);   // 通过zookeeper中的/brokers即可找到kafka的地址
         String topic = "uploadLogs";
         String zkRoot = "/" + topic;
-        String id = "consumer-3";
+        String id = "consumer-id";
         SpoutConfig spoutConf = new SpoutConfig(hosts, topic, zkRoot, id);
         // 本地环境设置之后，也可以在zk中建立/f-k-s节点，在集群环境中，不用配置也可以在zk中建立/f-k-s节点
         //spoutConf.zkServers = Arrays.asList(new String[]{"uplooking01", "uplooking02", "uplooking03"});
         //spoutConf.zkPort = 2181;
-        //spoutConf.startOffsetTime=OffsetRequest.EarliestTime();
-
         //spoutConf.startOffsetTime = OffsetRequest.LatestTime(); // 设置之后，刚启动时就不会把之前的消息也进行读取，会从最新的偏移量开始读取
         return new KafkaSpout(spoutConf);
     }

@@ -22,6 +22,7 @@ public class SpliteSimBolt extends BaseRichBolt {
      * kafkaSpout发送的字段名为bytes
      */
     private OutputCollector collector;
+    CosineTextSimilarity cos;
     SimpleDateFormat sdftime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
     SimpleDateFormat sdfHour = new SimpleDateFormat("yyyyMMdd HH");
     SimpleDateFormat sdfDay = new SimpleDateFormat("yyyyMMdd");
@@ -29,10 +30,11 @@ public class SpliteSimBolt extends BaseRichBolt {
     @Override
     public void prepare(Map map, TopologyContext topologyContext, OutputCollector outputCollector) {
         this.collector=outputCollector;
+        this.cos=new CosineTextSimilarity();
     }
     @Override
     public void execute(Tuple input) {
-        long id = input.getLongByField("id");
+        String id = input.getStringByField("id");
         String time = input.getStringByField("time");
         String param = input.getStringByField("param");
         String message = input.getStringByField("message");
@@ -48,11 +50,10 @@ public class SpliteSimBolt extends BaseRichBolt {
             e.printStackTrace();
             return;
         }
-
-        Jedis jedis = JedisUtil.getJedis();
         double score=0;
-        CosineTextSimilarity cos=new CosineTextSimilarity();
-        Set<String> clu=jedis.smembers("Clusters");
+        Jedis jedis1 = JedisUtil.getJedis();
+        Set<String> clu=jedis1.smembers("Clusters");
+        jedis1.close();
         for(String c:clu){
             score=cos.similarScore(message,c);
             if(score>0.5){
@@ -61,9 +62,9 @@ public class SpliteSimBolt extends BaseRichBolt {
                 return;
             }
         }
+        Jedis jedis = JedisUtil.getJedis();
         jedis.sadd("Clusters",message);
         jedis.hset("ClusterNum",message,"1");
-        jedis.hset("ClusterCate",message,""+id);
         jedis.hset(message, hourStr, "1");
         jedis.hset(message, dayStr, "1");
 
