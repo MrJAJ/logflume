@@ -40,7 +40,7 @@ public class ExtractBolt extends BaseRichBolt {
         String line = new String(binary);
         Pattern p = Pattern.compile(lineRex);
         Matcher m = p.matcher(line);
-        if(!m.find()){return;}
+        if(!m.find()){ collector.ack(input);return;}
         String [] result=new String[rexs.length];
         for(int i=0;i<rexs.length;i++) {
             Pattern pattern = Pattern.compile(rexs[i]);
@@ -57,13 +57,13 @@ public class ExtractBolt extends BaseRichBolt {
         String param=result[1];
         String message=result[2];
         System.out.println(id+"\t"+time+"\t"+param+"\t"+message+"\t"+line);
-        collector.emit(new Values( ""+id,time,param,message,line));
+        collector.emit(new Values( ""+id,time,param,message,line,message));
         collector.ack(input);
     }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declare(new Fields("id","time","param", "message","log"));
+        declarer.declare(new Fields("id","time","param", "message","log","keyWord"));
     }
 
 }

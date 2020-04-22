@@ -40,15 +40,18 @@ public class StatisticTopology {
         //业务计算
         builder.setSpout("id_kafka_spout", kafkaSpout,1);
 
-        SimpleHBaseMapper logmapper = new SimpleHBaseMapper()
-                .withRowKeyField("id")
-                .withColumnFields(new Fields("time","param","message","log"))
-                .withColumnFamily("base_info");
-
         SimpleHBaseMapper logclumapper = new SimpleHBaseMapper()
                 .withRowKeyField("id")
                 .withColumnFields(new Fields("cluster","model","param"))
                 .withColumnFamily("extra_info");
+
+        SimpleHBaseMapper logmapper = new SimpleHBaseMapper()
+                .withRowKeyField("id")
+                .withColumnFields(new Fields("time"))
+                .withColumnFields(new Fields("param"))
+                .withColumnFields(new Fields("message"))
+                .withColumnFields(new Fields("log"))
+                .withColumnFamily("base_info");
 
         builder.setBolt("extractBolt", new ExtractBolt(),2).shuffleGrouping("id_kafka_spout");
 

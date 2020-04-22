@@ -73,6 +73,7 @@ public class SpliteSimBolt extends BaseRichBolt {
         }
         jedis.zincrby("ClusterRank:" + dayStr, 1, message);
         jedis.close();
+        collector.ack(input);
     }
 
     @Override
