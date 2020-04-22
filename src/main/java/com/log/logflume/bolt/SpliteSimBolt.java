@@ -56,7 +56,7 @@ public class SpliteSimBolt extends BaseRichBolt {
         jedis1.close();
         for(String c:clu){
             score=cos.similarScore(message,c);
-            if(score>0.5){
+            if(score>0.3){
                 this.collector.emit(new Values(id,time,param,message,c,1));
                 collector.ack(input);
                 return;

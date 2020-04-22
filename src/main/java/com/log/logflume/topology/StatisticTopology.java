@@ -2,6 +2,7 @@ package com.log.logflume.topology;
 
 import com.log.logflume.bolt.*;
 
+import kafka.api.OffsetRequest;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.StormSubmitter;
@@ -37,23 +38,23 @@ public class StatisticTopology {
 
         KafkaSpout kafkaSpout = createKafkaSpout();
         //业务计算
-        builder.setSpout("id_kafka_spout", kafkaSpout,3);
+        builder.setSpout("id_kafka_spout", kafkaSpout,1);
 
         SimpleHBaseMapper logmapper = new SimpleHBaseMapper()
                 .withRowKeyField("id")
                 .withColumnFields(new Fields("time","param","message","log"))
-                .withColumnFamily("baseInfo");
+                .withColumnFamily("base_info");
 
         SimpleHBaseMapper logclumapper = new SimpleHBaseMapper()
                 .withRowKeyField("id")
                 .withColumnFields(new Fields("cluster","model","param"))
-                .withColumnFamily("extraInfo");
+                .withColumnFamily("extra_info");
 
         builder.setBolt("extractBolt", new ExtractBolt(),2).shuffleGrouping("id_kafka_spout");
 
         builder.setBolt("replaceBolt", new ReplaceBolt(),2).shuffleGrouping("extractBolt");
 
-        HBaseBolt logHbaseBolt = new HBaseBolt("logInfo", logmapper).withConfigKey("hbase.conf");
+        HBaseBolt logHbaseBolt = new HBaseBolt("log_info", logmapper).withConfigKey("hbase.conf");
         builder.setBolt("logHBaseBolt", logHbaseBolt,2).shuffleGrouping("replaceBolt");
 
         builder.setBolt("extraCountBolt", new ExtraCountBolt(),3).shuffleGrouping("extractBolt");
@@ -65,7 +66,7 @@ public class StatisticTopology {
         builder.setBolt("clusterSpellBolt", new ClusterSpellBolt(),4).shuffleGrouping("spliteSimBolt");
 
 
-        HBaseBolt logcluHbaseBolt = new HBaseBolt("logInfo", logclumapper)
+        HBaseBolt logcluHbaseBolt = new HBaseBolt("log_info", logclumapper)
                 .withConfigKey("hbase.conf");
         builder.setBolt("logcluHBaseBolt", logcluHbaseBolt,2).shuffleGrouping("clusterSpellBolt");
 
@@ -99,7 +100,7 @@ public class StatisticTopology {
         // 本地环境设置之后，也可以在zk中建立/f-k-s节点，在集群环境中，不用配置也可以在zk中建立/f-k-s节点
         //spoutConf.zkServers = Arrays.asList(new String[]{"uplooking01", "uplooking02", "uplooking03"});
         //spoutConf.zkPort = 2181;
-        //spoutConf.startOffsetTime = OffsetRequest.LatestTime(); // 设置之后，刚启动时就不会把之前的消息也进行读取，会从最新的偏移量开始读取
+        spoutConf.startOffsetTime = OffsetRequest.LatestTime(); // 设置之后，刚启动时就不会把之前的消息也进行读取，会从最新的偏移量开始读取
         return new KafkaSpout(spoutConf);
     }
 

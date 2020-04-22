@@ -55,11 +55,8 @@ public class ClusterSpellBolt extends BaseRichBolt {
             collector.ack(input);
         }else{
 
-            String np=insert(model,""+id,message,seq,c);
-            Jedis jedis = JedisUtil.getJedis();
-            String nm=jedis.hget("ClusterModels",c);
-            jedis.close();
-            collector.emit(new Values( id,c,nm,np));
+            String[] np=insert(model,""+id,message,seq,c);
+            collector.emit(new Values( id,c,np[0],np[1]));
             collector.ack(input);
 
         }
@@ -125,7 +122,7 @@ public class ClusterSpellBolt extends BaseRichBolt {
 
         return count;
     }
-    public String insert(String[] model, String Id,String message,String[] seq,String c) {
+    public String[] insert(String[] model, String Id,String message,String[] seq,String c) {
 
 
         List<String> params=new ArrayList<>();
@@ -134,7 +131,7 @@ public class ClusterSpellBolt extends BaseRichBolt {
         for(String tmp:model){
             oldm.append(tmp+" ");
         }
-
+        String[] result=new String[2];
         //Create the new sequence by looping through it
         int lastMatch = -1;
         boolean placeholder = false; //Decides whether or not to add a * depending if there is already one preceding or not
@@ -179,6 +176,7 @@ public class ClusterSpellBolt extends BaseRichBolt {
             }
         }
         //Set sequence based of the common sequence found
+        result[0]=temp.trim();
         model = temp.trim().split("[\\s]+");
         Jedis jedis = JedisUtil.getJedis();
         String oldModel=jedis.hget("ClusterModels",c);
@@ -194,8 +192,9 @@ public class ClusterSpellBolt extends BaseRichBolt {
         }
         jedis.hset("ClusterModels",c,newModel+";");
 
-        jedis.hset("ModelIds",oldm.toString(),oldId+Id+" ");
+        jedis.hset("ModelIds",newModel.toString(),oldId+Id+" ");
         jedis.close();
-        return params.size()==0?"":(params.toString()+" ");
+        result[1]=params.size()==0?"":(params.toString()+" ");
+        return result;
     }
 }

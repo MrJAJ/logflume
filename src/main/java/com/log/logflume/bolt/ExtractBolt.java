@@ -56,7 +56,7 @@ public class ExtractBolt extends BaseRichBolt {
         String time=result[0];
         String param=result[1];
         String message=result[2];
-        //System.out.println(id+"\t"+time+"\t"+param+"\t"+message+"\t"+line);
+        System.out.println(id+"\t"+time+"\t"+param+"\t"+message+"\t"+line);
         collector.emit(new Values( ""+id,time,param,message,line));
         collector.ack(input);
     }
