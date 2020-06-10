@@ -27,7 +27,7 @@ public class ExtractBolt extends BaseRichBolt {
     public void prepare(Map map, TopologyContext topologyContext, OutputCollector outputCollector) {
         this.collector=outputCollector;
         this.idGenerator= IdGenerator.builder()
-                .addHost("133.133.135.38", 6379, "c5809078fa6d652e0b0232d552a9d06d37fe819c")
+                .addHost("133.133.135.23", 6379, "c5809078fa6d652e0b0232d552a9d06d37fe819c")
 //				.addHost("127.0.0.1", 7379, "accb7a987d4fb0fd85c57dc5a609529f80ec3722")
 //				.addHost("127.0.0.1", 8379, "f55f781ca4a00a133728488e15a554c070b17255")
                 .build();
@@ -40,7 +40,7 @@ public class ExtractBolt extends BaseRichBolt {
         String line = new String(binary);
         Pattern p = Pattern.compile(lineRex);
         Matcher m = p.matcher(line);
-        if(!m.find()){ collector.ack(input);return;}
+        if(!m.find()){ collector.fail(input);return;}
         String [] result=new String[rexs.length];
         for(int i=0;i<rexs.length;i++) {
             Pattern pattern = Pattern.compile(rexs[i]);
@@ -56,7 +56,7 @@ public class ExtractBolt extends BaseRichBolt {
         String time=result[0];
         String param=result[1];
         String message=result[2];
-        System.out.println(id+"\t"+time+"\t"+param+"\t"+message+"\t"+line);
+        //System.out.println(id+"\t"+time+"\t"+param+"\t"+message+"\t"+line);
         collector.emit(new Values( ""+id,time,param,message,line,message));
         collector.ack(input);
     }

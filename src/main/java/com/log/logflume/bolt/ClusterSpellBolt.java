@@ -49,16 +49,17 @@ public class ClusterSpellBolt extends BaseRichBolt {
             String oldModels=jedis.hget("ClusterModels",c);
             oldModels=oldModels==null?"":oldModels+";";
             jedis.hset("ClusterModels",c,oldModels+m.toString());
-            jedis.hset("ModelIds",m.toString(),""+id+" ");
+            //jedis.hset("ModelIds",m.toString(),""+id+" ");
             jedis.close();
             collector.emit(new Values( id,c,model,""));
             collector.ack(input);
         }else{
 
             String[] np=insert(model,""+id,message,seq,c);
+
             collector.emit(new Values( id,c,np[0],np[1]));
             collector.ack(input);
-
+            System.out.println("save"+id+"\t"+c+"\t"+np[0]+"\t"+np[1]);
         }
 
     }
@@ -184,15 +185,15 @@ public class ClusterSpellBolt extends BaseRichBolt {
         for(String tmp:model){
             m.append(tmp+" ");
         }
-        String oldId=jedis.hget("ModelIds",oldm.toString());
+        //String oldId=jedis.hget("ModelIds",oldm.toString());
         String newModel=m.toString();
         if(!oldModel.equals(m.toString())){
-            jedis.hdel("ModelIds", oldm.toString());
+            //jedis.hdel("ModelIds", oldm.toString());
             newModel=oldModel.replace(oldm.toString(),m.toString());
         }
-        jedis.hset("ClusterModels",c,newModel+";");
+        jedis.hset("ClusterModels",c,newModel);
 
-        jedis.hset("ModelIds",newModel.toString(),oldId+Id+" ");
+        //jedis.hset("ModelIds",newModel.toString(),oldId+Id+" ");
         jedis.close();
         result[1]=params.size()==0?"":(params.toString()+" ");
         return result;

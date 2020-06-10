@@ -59,6 +59,7 @@ public class ClusterCountBolt extends BaseRichBolt {
             jedis.zincrby("ErrorClusterRank:" + dayStr, 1, c);
         }
         jedis.close();
+        collector.ack(input);
     }
 
     @Override

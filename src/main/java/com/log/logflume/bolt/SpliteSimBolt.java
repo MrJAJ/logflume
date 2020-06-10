@@ -8,12 +8,16 @@ import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
+import org.apdplat.word.WordSegmenter;
 import org.apdplat.word.analysis.CosineTextSimilarity;
+import org.apdplat.word.analysis.JaccardTextSimilarity;
+import org.apdplat.word.segmentation.Word;
 import redis.clients.jedis.Jedis;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -22,7 +26,7 @@ public class SpliteSimBolt extends BaseRichBolt {
      * kafkaSpout发送的字段名为bytes
      */
     private OutputCollector collector;
-    CosineTextSimilarity cos;
+    JaccardTextSimilarity ja;
     SimpleDateFormat sdftime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
     SimpleDateFormat sdfHour = new SimpleDateFormat("yyyyMMdd HH");
     SimpleDateFormat sdfDay = new SimpleDateFormat("yyyyMMdd");
@@ -30,7 +34,7 @@ public class SpliteSimBolt extends BaseRichBolt {
     @Override
     public void prepare(Map map, TopologyContext topologyContext, OutputCollector outputCollector) {
         this.collector=outputCollector;
-        this.cos=new CosineTextSimilarity();
+        this.ja=new JaccardTextSimilarity();
     }
     @Override
     public void execute(Tuple input) {
@@ -55,8 +59,8 @@ public class SpliteSimBolt extends BaseRichBolt {
         Set<String> clu=jedis1.smembers("Clusters");
         jedis1.close();
         for(String c:clu){
-            score=cos.similarScore(message,c);
-            if(score>0.3){
+            score=ja.similarScore(message,c);
+            if(score>0.5){
                 this.collector.emit(new Values(id,time,param,message,c,1));
                 collector.ack(input);
                 return;
@@ -64,6 +68,12 @@ public class SpliteSimBolt extends BaseRichBolt {
         }
         Jedis jedis = JedisUtil.getJedis();
         jedis.sadd("Clusters",message);
+        String[] seq=listToArray(WordSegmenter.segWithStopWords(message));
+        StringBuilder m=new StringBuilder();
+        for(String tmp:seq){
+            m.append(tmp+" ");
+        }
+        jedis.hset("ClusterModels",message,m.toString());
         jedis.hset("ClusterNum",message,"1");
         jedis.hset(message, hourStr, "1");
         jedis.hset(message, dayStr, "1");
@@ -79,6 +89,14 @@ public class SpliteSimBolt extends BaseRichBolt {
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declare(new Fields("id","time","param","message","cluster","count"));
+    }
+
+    public String[] listToArray(List<Word> list){
+        String[] words=new String[list.size()];
+        for(int i=0;i<list.size();i++){
+            words[i]=list.get(i).getText();
+        }
+        return words;
     }
 
 }

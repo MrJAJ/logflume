@@ -14,6 +14,7 @@ import org.apache.storm.kafka.KafkaSpout;
 import org.apache.storm.kafka.SpoutConfig;
 import org.apache.storm.kafka.ZkHosts;
 import org.apache.storm.topology.TopologyBuilder;
+import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.tuple.Fields;
 
 import java.util.HashMap;
@@ -26,7 +27,6 @@ public class StatisticTopology {
 
     public static void main(String[] args) throws Exception {
         TopologyBuilder builder = new TopologyBuilder();
-        //System.setProperty("hadoop.home.dir","D:\\Dev\\hadoop-3.1.2");
 
         Config config = new Config();
         Map<String, Object> hbaseConf = new HashMap<String, Object>();
@@ -36,42 +36,43 @@ public class StatisticTopology {
         hbaseConf.put("hbase.master","master1.hadoop.com:16000");
         config.put("hbase.conf",hbaseConf);
 
-        KafkaSpout kafkaSpout = createKafkaSpout();
+        BaseRichSpout kafkaSpout = new MySpout();
         //业务计算
         builder.setSpout("id_kafka_spout", kafkaSpout,1);
+
+
+        SimpleHBaseMapper logmapper = new SimpleHBaseMapper()
+                .withRowKeyField("id")
+                .withColumnFields(new Fields("time","param","message","log"))
+                .withColumnFamily("base_info");
 
         SimpleHBaseMapper logclumapper = new SimpleHBaseMapper()
                 .withRowKeyField("id")
                 .withColumnFields(new Fields("cluster","model","param"))
                 .withColumnFamily("extra_info");
 
-        SimpleHBaseMapper logmapper = new SimpleHBaseMapper()
-                .withRowKeyField("id")
-                .withColumnFields(new Fields("time"))
-                .withColumnFields(new Fields("param"))
-                .withColumnFields(new Fields("message"))
-                .withColumnFields(new Fields("log"))
-                .withColumnFamily("base_info");
-
         builder.setBolt("extractBolt", new ExtractBolt(),2).shuffleGrouping("id_kafka_spout");
 
         builder.setBolt("replaceBolt", new ReplaceBolt(),2).shuffleGrouping("extractBolt");
+//
+//        HBaseBolt logHbaseBolt = new HBaseBolt("log_info", logmapper).withConfigKey("hbase.conf");
+//        builder.setBolt("logHBaseBolt", logHbaseBolt,2).shuffleGrouping("replaceBolt");
 
-        HBaseBolt logHbaseBolt = new HBaseBolt("log_info", logmapper).withConfigKey("hbase.conf");
-        builder.setBolt("logHBaseBolt", logHbaseBolt,2).shuffleGrouping("replaceBolt");
-
-        builder.setBolt("extraCountBolt", new ExtraCountBolt(),3).shuffleGrouping("extractBolt");
-
+//        builder.setBolt("extraCountBolt", new ExtraCountBolt(),3).shuffleGrouping("extractBolt");
+//
         builder.setBolt("spliteSimBolt", new SpliteSimBolt(),6).shuffleGrouping("replaceBolt");
-
-        builder.setBolt("clusterCountBolt", new ClusterCountBolt(),3).shuffleGrouping("spliteSimBolt");
-
+//
+//        builder.setBolt("clusterCountBolt", new ClusterCountBolt(),3).shuffleGrouping("spliteSimBolt");
+//
         builder.setBolt("clusterSpellBolt", new ClusterSpellBolt(),4).shuffleGrouping("spliteSimBolt");
 
+        builder.setBolt("modelSpliteBolt", new ModelSpliteBolt(),4).shuffleGrouping("clusterSpellBolt");
 
-        HBaseBolt logcluHbaseBolt = new HBaseBolt("log_info", logclumapper)
-                .withConfigKey("hbase.conf");
-        builder.setBolt("logcluHBaseBolt", logcluHbaseBolt,2).shuffleGrouping("clusterSpellBolt");
+        builder.setBolt("variableSpliteBolt", new VariableSpliteBolt(),4).fieldsGrouping("clusterSpellBolt",new Fields("model"));
+
+//        HBaseBolt logcluHbaseBolt = new HBaseBolt("log_info", logclumapper)
+//                .withConfigKey("hbase.conf");
+//        builder.setBolt("logcluHBaseBolt", logcluHbaseBolt,2).shuffleGrouping("clusterSpellBolt");
 
         // 使用builder构建topology
         StormTopology topology = builder.createTopology();
@@ -82,8 +83,12 @@ public class StatisticTopology {
         if (args == null || args.length < 1) {  // 没有参数时使用本地模式，有参数时使用集群模式
             LocalCluster localCluster = new LocalCluster(); // 本地开发模式，创建的对象为LocalCluster
             localCluster.submitTopology(topologyName, config, topology);
+            //Thread.sleep(1000);
+
+            //localCluster.shutdown();
         } else {
             StormSubmitter.submitTopology(topologyName, config, topology);
+
         }
     }
 
@@ -103,7 +108,7 @@ public class StatisticTopology {
         // 本地环境设置之后，也可以在zk中建立/f-k-s节点，在集群环境中，不用配置也可以在zk中建立/f-k-s节点
         //spoutConf.zkServers = Arrays.asList(new String[]{"uplooking01", "uplooking02", "uplooking03"});
         //spoutConf.zkPort = 2181;
-        spoutConf.startOffsetTime = OffsetRequest.LatestTime(); // 设置之后，刚启动时就不会把之前的消息也进行读取，会从最新的偏移量开始读取
+        //spoutConf.startOffsetTime = OffsetRequest.LatestTime(); // 设置之后，刚启动时就不会把之前的消息也进行读取，会从最新的偏移量开始读取
         return new KafkaSpout(spoutConf);
     }
 

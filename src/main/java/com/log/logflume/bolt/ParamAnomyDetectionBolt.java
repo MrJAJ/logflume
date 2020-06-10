@@ -12,7 +12,7 @@ import redis.clients.jedis.Jedis;
 
 import java.util.Map;
 
-public class ModelSpliteBolt extends BaseRichBolt {
+public class ParamAnomyDetectionBolt extends BaseRichBolt {
     /**
      * kafkaSpout发送的字段名为bytes
      */
@@ -25,19 +25,17 @@ public class ModelSpliteBolt extends BaseRichBolt {
     @Override
     public void execute(Tuple input) {
         String id = input.getStringByField("id");
+        String uid=input.getStringByField("uid");
         String model = input.getStringByField("model");
-        String param = input.getStringByField("param");
-        System.out.println(model);
-        String[] s=new String[]{"98809609262727168，","99558628322705408，","97638799831465984，","98365864436301824，"};
-        int n= (int) (Math.random()*4);
-        String uid=s[n];
-        this.collector.emit(new Values(id,uid,model));
+        System.out.println(uid+"\t"+model);
+        Jedis jedis = JedisUtil.getJedis();
+        this.collector.emit(new Values(id,model));
         collector.ack(input);
     }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declare(new Fields("id","uid","model"));
+        declarer.declare(new Fields("id","model"));
     }
 
 }

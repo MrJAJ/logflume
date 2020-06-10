@@ -42,6 +42,7 @@ public class ExtraCountBolt extends BaseRichBolt {
             dayStr = sdfDay.format(date);
         } catch (ParseException e) {
             e.printStackTrace();
+            collector.ack(input);
             return;
         }
 
@@ -61,6 +62,7 @@ public class ExtraCountBolt extends BaseRichBolt {
             updateData(params[i],hourStr);
             updateData(params[i],dayStr);
         }
+        collector.ack(input);
         //System.out.println(id+"\t"+"message：\t"+message);
 //        Set<String> ex=jedis.smembers("extras");
 //        for(String pa:ex){
