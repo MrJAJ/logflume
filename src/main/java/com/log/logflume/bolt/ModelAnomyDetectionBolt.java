@@ -56,7 +56,7 @@ public class ModelAnomyDetectionBolt extends BaseRichBolt {
             collector.ack(input);
         }else{
             System.out.println("Anomy"+uid+"\t"+lastModel+"\t"+model+"\t"+num);
-            //this.collector.emit(new Values(id,uid,lastModel,model));
+            this.collector.emit(new Values(id,uid,lastModel,model));
             collector.fail(input);
         }
 
