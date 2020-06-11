@@ -51,12 +51,12 @@ public class ModelAnomyDetectionBolt extends BaseRichBolt {
         Arrays.sort(GLastModel);
         int num=Integer.parseInt(jedis2.hget("G",""+lastModel).split(" ")[model]);
         jedis2.close();
-        if(num>GLastModel[9]){
+        if(num>=GLastModel[9]){
             this.collector.emit(new Values(id,uid,lastModel,model));
             collector.ack(input);
         }else{
-            System.out.println("Anomy"+uid+"\t"+lastModel+"\t"+model+"\t"+num);
-            //this.collector.emit(new Values(id,uid,lastModel,model));
+            //System.out.println("Anomy"+uid+"\t"+lastModel+"\t"+model+"\t"+num);
+            this.collector.emit(new Values(id,uid,lastModel,model,3));
             collector.fail(input);
         }
 
@@ -65,7 +65,7 @@ public class ModelAnomyDetectionBolt extends BaseRichBolt {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declare(new Fields("id","uid","lastModel","model"));
+        declarer.declare(new Fields("id","uid","lastModel","model","type"));
     }
 
 }

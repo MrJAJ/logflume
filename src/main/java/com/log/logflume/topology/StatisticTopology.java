@@ -66,13 +66,20 @@ public class StatisticTopology {
 //
         builder.setBolt("clusterSpellBolt", new ClusterSpellBolt(),4).shuffleGrouping("spliteSimBolt");
 
-        builder.setBolt("modelSpliteBolt", new ModelSpliteBolt(),4).shuffleGrouping("clusterSpellBolt");
+        //builder.setBolt("modelSpliteBolt", new ModelSpliteBolt(),4).shuffleGrouping("clusterSpellBolt");
 
-        //builder.setBolt("variableSpliteBolt", new VariableSpliteBolt(),4).fieldsGrouping("clusterSpellBolt",new Fields("model"));
+        //builder.setBolt("modelAnomyDetectionBolt", new ModelAnomyDetectionBolt(),4).fieldsGrouping("modelSpliteBolt",new Fields("uid"));
 
-        builder.setBolt("modelAnomyDetectionBolt", new ModelAnomyDetectionBolt(),4).fieldsGrouping("modelSpliteBolt",new Fields("uid"));
+        //builder.setBolt("WorkFlowBolt", new WorkFlowBolt(),4).shuffleGrouping("modelAnomyDetectionBolt");
 
-        builder.setBolt("WorkFlowBolt", new WorkFlowBolt(),4).shuffleGrouping("modelAnomyDetectionBolt");
+        builder.setBolt("variableSpliteBolt", new VariableSpliteBolt(),4).fieldsGrouping("clusterSpellBolt",new Fields("model"));
+
+        //builder.setBolt("singleDBScanBolt", new SingleDBScanBolt(),4).fieldsGrouping("variableSpliteBolt",new Fields("model"));
+
+  //      builder.setBolt("gloableDBScanBolt", new GloableDBScanBolt(),4).fieldsGrouping("singleDBScanBolt",new Fields("model"));
+
+    //    builder.setBolt("paramAnomyDetectionBolt", new ParamAnomyDetectionBolt(),4).fieldsGrouping("gloableDBScanBolt",new Fields("model"));
+
 
 //        HBaseBolt logcluHbaseBolt = new HBaseBolt("log_info", logclumapper)
 //                .withConfigKey("hbase.conf");
