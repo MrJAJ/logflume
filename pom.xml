@@ -194,6 +194,13 @@
             <artifactId>drools-templates</artifactId>
             <version>6.5.0.Final</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/com.alibaba/fastjson -->
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>fastjson</artifactId>
+            <version>1.2.70</version>
+        </dependency>
+
     </dependencies>
 
     <build>

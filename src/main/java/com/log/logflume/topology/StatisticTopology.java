@@ -74,7 +74,7 @@ public class StatisticTopology {
 
         builder.setBolt("variableSpliteBolt", new VariableSpliteBolt(),4).fieldsGrouping("clusterSpellBolt",new Fields("model"));
 
-        //builder.setBolt("singleDBScanBolt", new SingleDBScanBolt(),4).fieldsGrouping("variableSpliteBolt",new Fields("model"));
+        builder.setBolt("singleDBScanBolt", new SingleDBScanBolt(),4).fieldsGrouping("variableSpliteBolt",new Fields("model"));
 
   //      builder.setBolt("gloableDBScanBolt", new GloableDBScanBolt(),4).fieldsGrouping("singleDBScanBolt",new Fields("model"));
 
