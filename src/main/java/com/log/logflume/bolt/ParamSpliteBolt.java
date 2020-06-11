@@ -42,7 +42,7 @@ public class ParamSpliteBolt extends BaseRichBolt {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declare(new Fields("id","model","param"));
+        declarer.declare(new Fields("id","model","params"));
     }
 
 }

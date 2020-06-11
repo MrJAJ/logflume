@@ -8,6 +8,7 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 
+import java.util.List;
 import java.util.Map;
 
 public class SingleDBScanBolt extends BaseRichBolt {
@@ -24,9 +25,9 @@ public class SingleDBScanBolt extends BaseRichBolt {
     public void execute(Tuple input) {
         String id = input.getStringByField("id");
         String model = input.getStringByField("model");
-        String param = input.getStringByField("param");
-        System.out.println(param);
-        this.collector.emit(new Values(id,model,param));
+        List<String> params = (List<String>) input.getValueByField("params");
+        System.out.println(model+"\t"+params);
+        this.collector.emit(new Values(id,model,params));
         collector.ack(input);
     }
 
