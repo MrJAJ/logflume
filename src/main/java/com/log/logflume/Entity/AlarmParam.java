@@ -53,4 +53,19 @@ public class AlarmParam implements Serializable {
         jedis.hset("Anomy","2\t"+System.currentTimeMillis(),message);
         jedis.close();
     }
+
+    public void errorrateThreshold(String message){
+        Jedis jedis = new Jedis("133.133.135.26", 6379);
+        jedis.hset("Anomy","2\t"+System.currentTimeMillis(),message);
+        jedis.close();
+    }
+//package com.log.logflume.Entity
+
+//    rule "rule2"
+//    salience 1
+//    when
+//    a:AlarmParam(a.errorThreshold == 0)
+//    then
+//    a.alarm(a.getErrorThreshold()+"异常");
+//    end
 }
