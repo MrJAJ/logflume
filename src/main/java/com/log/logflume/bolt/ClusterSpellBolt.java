@@ -54,12 +54,10 @@ public class ClusterSpellBolt extends BaseRichBolt {
             collector.emit(new Values( id,c,model,""));
             collector.ack(input);
         }else{
-
             String[] np=insert(model,""+id,message,seq,c);
-
             collector.emit(new Values( id,c,np[0],np[1]));
             collector.ack(input);
-            System.out.println("save"+id+"\t"+c+"\t"+np[0]+"\t"+np[1]);
+            //System.out.println("save"+id+"\t"+c+"\t"+np[0]+"\t"+np[1]);
         }
 
     }

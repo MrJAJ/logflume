@@ -29,15 +29,19 @@ public class ModelAnomyDetectionBolt extends BaseRichBolt {
         String uid=input.getStringByField("uid");
         int model = input.getIntegerByField("model");
 
-        System.out.println(uid+"\t"+model);
+        //System.out.println(uid+"\t"+model);
         Jedis jedis = JedisUtil.getJedis();
-        int lastModel=Integer.parseInt(jedis.hget("lastModel",uid));
-        Set<String> models=jedis.smembers("models");
+        String last=jedis.hget("lastModel",uid);
         jedis.close();
-        if(!models.contains(lastModel)){
-            this.collector.emit(new Values(id,uid,lastModel,model));
+        int lastModel=-1;
+        if(last==null) {
+            this.collector.emit(new Values(id, uid, lastModel, model));
             collector.ack(input);
+            return;
         }
+
+        lastModel=Integer.parseInt(last);
+
         Jedis jedis2 = JedisUtil.getJedis();
         String[] tmp=jedis2.hget("G",""+lastModel).split(" ");
         int[] GLastModel=new int[tmp.length];
@@ -51,7 +55,8 @@ public class ModelAnomyDetectionBolt extends BaseRichBolt {
             this.collector.emit(new Values(id,uid,lastModel,model));
             collector.ack(input);
         }else{
-           System.out.println("Anomy"+uid+"\t"+lastModel+"\t"+model+"\t"+num);
+            System.out.println("Anomy"+uid+"\t"+lastModel+"\t"+model+"\t"+num);
+            //this.collector.emit(new Values(id,uid,lastModel,model));
             collector.fail(input);
         }
 

@@ -37,8 +37,8 @@ public class ModelSpliteBolt extends BaseRichBolt {
         String id = input.getStringByField("id");
         String model = input.getStringByField("model");
         String param = input.getStringByField("param");
-        System.out.println(model);
-        String[] s=new String[]{"98809609262727168，","99558628322705408，","97638799831465984，","98365864436301824，"};
+        //System.out.println(model);
+        String[] s=new String[]{"98809609262727168","99558628322705408","97638799831465984","98365864436301824"};
         int n= (int) (Math.random()*4);
         String uid=s[n];
         Jedis jedis = JedisUtil.getJedis();

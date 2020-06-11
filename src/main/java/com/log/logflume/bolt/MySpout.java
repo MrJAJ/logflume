@@ -38,7 +38,13 @@ public class MySpout extends BaseRichSpout {
                 "2019-04-25 00:02:56.790 ERROR 256668 --- [http-nio-8081-exec-6] c.ism.exception.CustomExceptionHandler   : 2019-04-25 00：02：56：790 data.comp_record_info[0].unit_base_info.unit_code 字段错误。 错误原因: 个数必须在18和18之间",
                 "2019-04-25 00:27:42.979 ERROR 256668 --- [http-nio-8081-exec-10] com.ism.service.TransactionService       : 2019-04-25 00：27：42第1条、交易信息中第1条交易明细信息中的产品未登记，交易单号为30521100100000125669，产品追溯码为350690129921113011",
                 "2019-04-25 00:51:05.929 ERROR 256668 --- [http-nio-8081-exec-6] com.ism.service.TransactionService       : 2019-04-25 00：51：05交易信息列表登记异常\n",
-                "2019-04-25 00:54:42.129 ERROR 256668 --- [http-nio-8081-exec-9] com.ism.service.TransactionService       : 2019-04-25 00：54：42第1条、交易信息中第1条交易明细信息中的产品未登记，交易单号为30521100100000135584，产品追溯码为350705100221113011\n"
+                "2019-04-25 00:54:42.129 ERROR 256668 --- [http-nio-8081-exec-9] com.ism.service.TransactionService       : 2019-04-25 00：54：42第1条、交易信息中第1条交易明细信息中的产品未登记，交易单号为30521100100000135584，产品追溯码为350705100221113011\n",
+                "2019-04-25 00:02:53.085 ERROR 256668 --- [http-nio-8081-exec-2] com.ism.service.UnitService              : 2019-04-25 00：02：52主体代码为 '350206197701151013' 的企业已经备案，请检查您的提交数据",
+                "2019-04-25 00:02:56.790 ERROR 256668 --- [http-nio-8081-exec-6] c.ism.exception.CustomExceptionHandler   : 2019-04-25 00：02：56：790 data.comp_record_info[5].unit_base_info.unit_code 字段错误。 错误原因: 个数必须在18和18之间",
+                "2019-04-25 00:27:42.979 ERROR 256668 --- [http-nio-8081-exec-10] com.ism.service.TransactionService       : 2019-04-25 00：27：42第5条、交易信息中第2条交易明细信息中的产品未登记，交易单号为30521100100000125665，产品追溯码为350690129921113013",
+                "2019-04-25 00:51:05.929 ERROR 256668 --- [http-nio-8081-exec-6] com.ism.service.TransactionService       : 2019-04-25 00：51：05交易信息列表登记异常\n",
+                "2019-04-25 00:54:42.129 ERROR 256668 --- [http-nio-8081-exec-9] com.ism.service.TransactionService       : 2019-04-25 00：54：42第1条、交易信息中第1条交易明细信息中的产品未登记，交易单号为30521100100000135590，产品追溯码为350705100221113034\n"
+
         };
         String sentence = sentences[random.nextInt(sentences.length)];
         try {
