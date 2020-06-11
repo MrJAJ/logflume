@@ -30,7 +30,7 @@ public class ParamAnomyDetectionBolt extends BaseRichBolt {
        // List<String> params = JSONObject.parseArray(input.getStringByField("params"), String.class);
         String params=input.getStringByField("params");
         String model = input.getStringByField("model");
-        this.collector.emit(new Values(id,model,params,4));
+        this.collector.emit(new Values(id,model,params,"4"));
         collector.fail(input);
     }
 

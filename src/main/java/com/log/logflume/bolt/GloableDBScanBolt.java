@@ -1,5 +1,6 @@
 package com.log.logflume.bolt;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.log.logflume.utils.JedisUtil;
 import org.apache.storm.task.OutputCollector;
@@ -28,6 +29,7 @@ public class GloableDBScanBolt extends BaseRichBolt {
     @Override
     public void prepare(Map map, TopologyContext topologyContext, OutputCollector outputCollector) {
         this.collector=outputCollector;
+        ed=new EditDistanceTextSimilarity();
         noise=new HashSet<>();
         this.maps=new HashMap<>();
     }
@@ -44,14 +46,17 @@ public class GloableDBScanBolt extends BaseRichBolt {
         int R=Integer.parseInt(jedis.get("R"));
         int MinPts=Integer.parseInt(jedis.get("MinPts"));
         jedis.close();
-        if(params.size()<MinPts){
+        if(params.size()<100){
+            System.out.println(maps);
             collector.ack(input);
         }else{
             List<List<String>> cluster=dbscan(params,R,MinPts);
+            System.out.println("cluster："+cluster);
             for(List<String> c:cluster){
                 if(c.size()<MinPts){
                     noise.addAll(c);
-                    this.collector.emit(new Values(id,model,noise));
+                    System.out.println("globalnoise："+model+"\t"+noise.size()+"\t"+noise);
+                    this.collector.emit(new Values(id,model, JSON.toJSONString(noise)));
                     collector.ack(input);
                     noise.clear();
                 }
@@ -62,7 +67,7 @@ public class GloableDBScanBolt extends BaseRichBolt {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declare(new Fields("id","model","param"));
+        declarer.declare(new Fields("id","model","params"));
     }
 
     public List<List<String>> dbscan(List<String> params, int R, int MinPts){
@@ -84,7 +89,7 @@ public class GloableDBScanBolt extends BaseRichBolt {
             }
         }
         while (!core.isEmpty()){
-            Set<String> oldP=unVisited;
+            Set<String> oldP=new HashSet<>(unVisited);
             Random random = new Random();
             List<String> tmp=new ArrayList<>(core);
             String o=tmp.get(random.nextInt(core.size()));

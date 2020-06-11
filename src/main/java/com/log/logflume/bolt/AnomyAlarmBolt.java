@@ -25,17 +25,18 @@ public class AnomyAlarmBolt extends BaseRichBolt {
     @Override
     public void execute(Tuple input) {
         String id = input.getStringByField("id");
-        String uid=input.getStringByField("uid");
+
         String type = input.getStringByField("type");
         String content="";
         if(type.equals("3")){
-            content=input.getStringByField("model");
+            String uid=input.getStringByField("uid");
+            content=uid+"\t"+input.getStringByField("model");
         }else if(type.equals("4")){
             content=input.getStringByField("model")+"\t"+input.getStringByField("param");
         }
-        System.out.println(uid+"\t"+content);
+        System.out.println(content);
         Jedis jedis = JedisUtil.getJedis();
-        jedis.hset("Anomy",""+type,id+"\t"+content);
+        jedis.hset("Anomy",type+"\t"+id,content);
         jedis.close();
         collector.ack(input);
     }

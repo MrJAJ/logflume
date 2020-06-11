@@ -76,9 +76,12 @@ public class StatisticTopology {
 
         builder.setBolt("singleDBScanBolt", new SingleDBScanBolt(),4).fieldsGrouping("variableSpliteBolt",new Fields("model"));
 
-  //      builder.setBolt("gloableDBScanBolt", new GloableDBScanBolt(),4).fieldsGrouping("singleDBScanBolt",new Fields("model"));
+        builder.setBolt("gloableDBScanBolt", new GloableDBScanBolt(),4).fieldsGrouping("singleDBScanBolt",new Fields("model"));
 
-    //    builder.setBolt("paramAnomyDetectionBolt", new ParamAnomyDetectionBolt(),4).fieldsGrouping("gloableDBScanBolt",new Fields("model"));
+        builder.setBolt("paramAnomyDetectionBolt", new ParamAnomyDetectionBolt(),4).fieldsGrouping("gloableDBScanBolt",new Fields("model"));
+
+        builder.setBolt("anomyAlarmBolt", new AnomyAlarmBolt(),4).fieldsGrouping("paramAnomyDetectionBolt",new Fields("type"));
+
 
 
 //        HBaseBolt logcluHbaseBolt = new HBaseBolt("log_info", logclumapper)

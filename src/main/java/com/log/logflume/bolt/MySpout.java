@@ -48,7 +48,7 @@ public class MySpout extends BaseRichSpout {
         };
         String sentence = sentences[random.nextInt(sentences.length)];
         try {
-            Thread.sleep(1000);
+            Thread.sleep(100);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

@@ -43,12 +43,14 @@ public class SingleDBScanBolt extends BaseRichBolt {
         int R=Integer.parseInt(jedis.get("R"));
         int MinPts=Integer.parseInt(jedis.get("MinPts"));
         jedis.close();
-        System.out.println("receive："+model+"\t"+R+"\t"+MinPts+"\t"+params);
+        //System.out.println("receive："+model+"\t"+R+"\t"+MinPts+"\t"+params.size()+"\t"+params);
 
         List<List<String>> cluster=dbscan(params,R,MinPts);
+       // System.out.println("cluster："+cluster);
         for(List<String> c:cluster){
             if(c.size()<MinPts){
                 noise.addAll(c);
+                //System.out.println("sendglobal："+model+"\t"+noise.size()+"\t"+noise);
                 this.collector.emit(new Values(id,model, JSON.toJSONString(noise)));
                 collector.ack(input);
                 noise.clear();
@@ -59,7 +61,7 @@ public class SingleDBScanBolt extends BaseRichBolt {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declare(new Fields("id","model","param"));
+        declarer.declare(new Fields("id","model","params"));
     }
 
     public List<List<String>> dbscan(List<String> params,int R,int MinPts){
@@ -80,15 +82,16 @@ public class SingleDBScanBolt extends BaseRichBolt {
                 }
             }
         }
-        while (!core.isEmpty()){
-            Set<String> oldP=unVisited;
+        //System.out.println("core"+core);
+        while (core.size()>0){
+            Set<String> oldP=new HashSet<>(unVisited);
             Random random = new Random();
             List<String> tmp=new ArrayList<>(core);
             String o=tmp.get(random.nextInt(core.size()));
             unVisited.remove(o);
             List<String> Q=new ArrayList<>();
             Q.add(o);
-            while(!Q.isEmpty()){
+            while(Q.size()>0){
                 String q=Q.get(0);
                 List<String> nq=new ArrayList<>();
                 for(String i:params){
@@ -105,11 +108,13 @@ public class SingleDBScanBolt extends BaseRichBolt {
                     unVisited.removeAll(S);
                 }
                 Q.remove(q);
+                //System.out.println("Q"+Q+Q.size());
             }
             k+=1;
             oldP.removeAll(unVisited);
             List<String> ck=new ArrayList<>(oldP);
             core.removeAll(ck);
+            //System.out.println("cl"+ck+core.size()+core);
             cluster.add(ck);
         }
         return cluster;

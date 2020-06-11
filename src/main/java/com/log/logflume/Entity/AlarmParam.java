@@ -42,9 +42,15 @@ public class AlarmParam implements Serializable {
         this.errorrateThreshold = errorrateThreshold;
     }
 
-    public void alarm(String message){
-        Jedis jedis = new Jedis("127.0.0.1", 6379);
-        jedis.hset("keyWordAlarm",""+System.currentTimeMillis(),message);
+    public void keyWordAlarm(String message){
+        Jedis jedis = new Jedis("133.133.135.26", 6379);
+        jedis.hset("Anomy","1\t"+System.currentTimeMillis(),message);
+        jedis.close();
+    }
+
+    public void thresholdAlarm(String message){
+        Jedis jedis = new Jedis("133.133.135.26", 6379);
+        jedis.hset("Anomy","2\t"+System.currentTimeMillis(),message);
         jedis.close();
     }
 }

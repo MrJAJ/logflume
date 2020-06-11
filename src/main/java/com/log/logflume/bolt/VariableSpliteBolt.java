@@ -39,7 +39,7 @@ public class VariableSpliteBolt extends BaseRichBolt {
         List<String> tmp=maps.getOrDefault(model,new ArrayList<>());
         tmp.add(param);
         maps.put(model, tmp);
-        if(maps.get(model).size()<10){
+        if(maps.get(model).size()<100){
             collector.ack(input);
             //System.out.println(model+"\t"+maps.get(model).size());
         }else{
