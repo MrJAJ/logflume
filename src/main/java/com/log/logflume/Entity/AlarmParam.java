@@ -59,13 +59,32 @@ public class AlarmParam implements Serializable {
         jedis.hset("Anomy","2\t"+System.currentTimeMillis(),message);
         jedis.close();
     }
-//package com.log.logflume.Entity
 
-//    rule "rule2"
-//    salience 1
+    //drl
+//    package com.log.logflume.Entity
+//    import com.log.logflume.Entity.AlarmParam;
+//
+//    rule "rule1"
+//        salience 1
 //    when
-//    a:AlarmParam(a.errorThreshold == 0)
+//        a:AlarmParam(keyWord matches "ERROR")
 //    then
-//    a.alarm(a.getErrorThreshold()+"异常");
+//        a.alarm("关键字异常告警"+keyWord);
+//    end
+//
+//    rule "rule2"
+//        salience 1
+//    when
+//        a:AlarmParam(errorThreshold >= 10000)
+//    then
+//        a.alarm("阈值异常，错误日志量高达"+errorThreshold);
+//    end
+//
+//    rule "rule3"
+//        salience 1
+//    when
+//        a:AlarmParam(errorrateThreshold >= 0.3)
+//    then
+//        a.alarm("阈值异常，错误率高达"+errorrateThreshold);
 //    end
 }

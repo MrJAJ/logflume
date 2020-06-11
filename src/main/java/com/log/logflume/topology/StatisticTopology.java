@@ -54,6 +54,8 @@ public class StatisticTopology {
         builder.setBolt("extractBolt", new ExtractBolt(),2).shuffleGrouping("id_kafka_spout");
 
         builder.setBolt("replaceBolt", new ReplaceBolt(),2).shuffleGrouping("extractBolt");
+
+        builder.setBolt("keyWordAlarmBolt", new KeyWordAlarmBolt(),2).shuffleGrouping("extractBolt");
 //
 //        HBaseBolt logHbaseBolt = new HBaseBolt("log_info", logmapper).withConfigKey("hbase.conf");
 //        builder.setBolt("logHBaseBolt", logHbaseBolt,2).shuffleGrouping("replaceBolt");
@@ -63,6 +65,11 @@ public class StatisticTopology {
         builder.setBolt("spliteSimBolt", new SpliteSimBolt(),6).shuffleGrouping("replaceBolt");
 //
 //        builder.setBolt("clusterCountBolt", new ClusterCountBolt(),3).shuffleGrouping("spliteSimBolt");
+
+        builder.setBolt("thresholdAlarmBolt", new ThresholdAlarmBolt(),4).shuffleGrouping("extraCountBolt");
+
+        builder.setBolt("thresholdAlarmBolt", new ThresholdAlarmBolt(),4).shuffleGrouping("clusterCountBolt");
+
 //
         builder.setBolt("clusterSpellBolt", new ClusterSpellBolt(),4).shuffleGrouping("spliteSimBolt");
 

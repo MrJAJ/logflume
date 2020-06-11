@@ -30,10 +30,11 @@ public class KeyWordAlarmBolt extends BaseRichBolt {
     private OutputCollector collector;
     KieSession ksession;
 
+
     @Override
     public void prepare(Map map, TopologyContext topologyContext, OutputCollector outputCollector) {
         this.collector=outputCollector;
-        Jedis jedis = new Jedis("127.0.0.1", 6379);
+        Jedis jedis = new Jedis("133.133.135.23", 6379);
         String rules = jedis.get("rules");
         jedis.close();
         KieServices kieServices = KieServices.Factory.get();
