@@ -1,5 +1,6 @@
 package com.log.logflume.bolt;
 
+import com.alibaba.fastjson.JSONObject;
 import com.log.logflume.utils.JedisUtil;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -10,6 +11,7 @@ import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 import redis.clients.jedis.Jedis;
 
+import java.util.List;
 import java.util.Map;
 
 public class ParamAnomyDetectionBolt extends BaseRichBolt {
@@ -25,17 +27,16 @@ public class ParamAnomyDetectionBolt extends BaseRichBolt {
     @Override
     public void execute(Tuple input) {
         String id = input.getStringByField("id");
-        String uid=input.getStringByField("uid");
+       // List<String> params = JSONObject.parseArray(input.getStringByField("params"), String.class);
+        String params=input.getStringByField("params");
         String model = input.getStringByField("model");
-        System.out.println(uid+"\t"+model);
-        Jedis jedis = JedisUtil.getJedis();
-        this.collector.emit(new Values(id,model));
-        collector.ack(input);
+        this.collector.emit(new Values(id,model,params,4));
+        collector.fail(input);
     }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declare(new Fields("id","model"));
+        declarer.declare(new Fields("id","model","param","type"));
     }
 
 }
