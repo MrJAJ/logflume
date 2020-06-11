@@ -27,11 +27,11 @@ public class ModelAnomyDetectionBolt extends BaseRichBolt {
     public void execute(Tuple input) {
         String id = input.getStringByField("id");
         String uid=input.getStringByField("uid");
-        String model = input.getStringByField("model");
+        int model = input.getIntegerByField("model");
 
         System.out.println(uid+"\t"+model);
         Jedis jedis = JedisUtil.getJedis();
-        String lastModel=jedis.hget("lastModel",uid);
+        int lastModel=Integer.parseInt(jedis.hget("lastModel",uid));
         Set<String> models=jedis.smembers("models");
         jedis.close();
         if(!models.contains(lastModel)){
@@ -39,14 +39,22 @@ public class ModelAnomyDetectionBolt extends BaseRichBolt {
             collector.ack(input);
         }
         Jedis jedis2 = JedisUtil.getJedis();
-        String[] tmp=jedis2.hget("G",lastModel).split(" ");
+        String[] tmp=jedis2.hget("G",""+lastModel).split(" ");
         int[] GLastModel=new int[tmp.length];
         for(int i=0;i<tmp.length;i++){
             GLastModel[i]=Integer.parseInt(tmp[i]);
         }
         Arrays.sort(GLastModel);
-        int num=jedis2.
+        int num=Integer.parseInt(jedis2.hget("G",""+lastModel).split(" ")[model]);
         jedis2.close();
+        if(num>GLastModel[9]){
+            this.collector.emit(new Values(id,uid,lastModel,model));
+            collector.ack(input);
+        }else{
+           System.out.println("Anomy"+uid+"\t"+lastModel+"\t"+model+"\t"+num);
+            collector.fail(input);
+        }
+
 
     }
 

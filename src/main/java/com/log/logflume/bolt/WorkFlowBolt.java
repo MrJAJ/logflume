@@ -25,6 +25,7 @@ public class WorkFlowBolt extends BaseRichBolt {
     @Override
     public void execute(Tuple input) {
         String id = input.getStringByField("id");
+        String uid = input.getStringByField("uid");
         int model = input.getIntegerByField("model");
         int lastmodel = input.getIntegerByField("lastmodel");
         if(lastmodel==-1){
@@ -35,16 +36,21 @@ public class WorkFlowBolt extends BaseRichBolt {
             return;
         }
         Jedis jedis = JedisUtil.getJedis();
+        String[] tmp=jedis.hget("G",""+lastmodel).split(" ");
+        int n=Integer.parseInt(tmp[model]);
         if(jedis.sismember("models",""+model)){
-            String[] tmp=jedis.hget("G",""+lastmodel).split(" ");
-            int n=Integer.parseInt(tmp[model]);
             tmp[model]=n+1+"";
-            StringBuilder newtmp=new StringBuilder(tmp);
-
-            jedis.hset("G",""+lastmodel,tmp.toString());
+            jedis.sadd("models",""+model);
+        }else{
+            tmp[model]=1+"";
         }
+        StringBuffer newtmp=new StringBuffer();
+        for(String t:tmp){
+            newtmp.append(t+" ");
+        }
+        jedis.hset("G",""+lastmodel, newtmp.toString().trim());
+        jedis.hset("lastModel",uid,""+model);
         jedis.close();
-        this.collector.emit(new Values(id,uid,model));
         collector.ack(input);
     }
 
