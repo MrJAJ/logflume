@@ -1,5 +1,6 @@
 package com.log.logflume.bolt;
 
+import com.log.logflume.utils.JedisUtil;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -7,6 +8,7 @@ import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
+import redis.clients.jedis.Jedis;
 
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -31,7 +33,15 @@ public class ExtractBolt extends BaseRichBolt {
 //				.addHost("127.0.0.1", 7379, "accb7a987d4fb0fd85c57dc5a609529f80ec3722")
 //				.addHost("127.0.0.1", 8379, "f55f781ca4a00a133728488e15a554c070b17255")
                 .build();
+        Jedis jedis = JedisUtil.getJedis();
+        String s=jedis.get("timeRex");
+        timeRex= s==null?timeRex:s;
+        String s2=jedis.get("extraRex");
+        extraRex= s2==null?extraRex:s2;
+        String s3=jedis.get("messageRex");
+        messageRex= s3==null?messageRex:s3;
         this.lineRex=timeRex+"\\s+"+extraRex+"\\s+"+messageRex;
+        jedis.close();
     }
     @Override
     public void execute(Tuple input) {
