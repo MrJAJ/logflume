@@ -10,7 +10,10 @@ import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
+import org.apdplat.word.analysis.CosineTextSimilarity;
 import org.apdplat.word.analysis.EditDistanceTextSimilarity;
+import org.apdplat.word.analysis.JaccardTextSimilarity;
+import org.apdplat.word.analysis.TextSimilarity;
 import redis.clients.jedis.Jedis;
 
 import java.util.*;
@@ -20,16 +23,38 @@ public class SingleDBScanBolt extends BaseRichBolt {
      * kafkaSpout发送的字段名为bytes
      */
     private OutputCollector collector;
-    private EditDistanceTextSimilarity ed;
+    private TextSimilarity co;
     private Set<String> unVisited;
     private Set<String> core;
     private Set<String> noise;
+    double R;
+    int MinPts;
+    String m;
 
 
     @Override
     public void prepare(Map map, TopologyContext topologyContext, OutputCollector outputCollector) {
         this.collector=outputCollector;
-        this.ed=new EditDistanceTextSimilarity();
+        this.co = new CosineTextSimilarity();
+        Jedis jedis = JedisUtil.getJedis();
+        this.m=jedis.get("simcommethod");
+        jedis.close();
+        if(m!=null) {
+            if (m.equals("1")) {
+                this.co = new CosineTextSimilarity();
+            } else if (m.equals("2")) {
+                this.co = new JaccardTextSimilarity();
+            } else if (m.equals("3")) {
+                this.co = new EditDistanceTextSimilarity();
+            }
+        }else{
+            m="1";
+        }
+        String r=jedis.get("R");
+        String min=jedis.get("MinPts");
+
+        R=r==null?2:Double.parseDouble(r);
+        MinPts=min==null?10:Integer.parseInt(min);
 
         noise=new HashSet<>();
 
@@ -39,10 +64,6 @@ public class SingleDBScanBolt extends BaseRichBolt {
         String id = input.getStringByField("id");
         String model = input.getStringByField("model");
         List<String> params = JSONObject.parseArray(input.getStringByField("params"), String.class);
-        Jedis jedis= JedisUtil.getJedis();
-        int R=Integer.parseInt(jedis.get("R"));
-        int MinPts=Integer.parseInt(jedis.get("MinPts"));
-        jedis.close();
         //System.out.println("receive："+model+"\t"+R+"\t"+MinPts+"\t"+params.size()+"\t"+params);
 
         List<List<String>> cluster=dbscan(params,R,MinPts);
@@ -64,7 +85,7 @@ public class SingleDBScanBolt extends BaseRichBolt {
         declarer.declare(new Fields("id","model","params"));
     }
 
-    public List<List<String>> dbscan(List<String> params,int R,int MinPts){
+    public List<List<String>> dbscan(List<String> params,Double R,int MinPts){
         int k=0;
         unVisited=new HashSet<>(params);
         core=new HashSet<>();
@@ -120,9 +141,14 @@ public class SingleDBScanBolt extends BaseRichBolt {
         return cluster;
     }
 
-    public int distance(String p,String q){
-        int max=Math.max(p.length(),q.length());
-        int distance=(int)(1-ed.similarScore(p,q))*max;
+    public double distance(String p,String q){
+        double distance=Double.MAX_VALUE;
+        if(m.equals("1")||m.equals("2")){
+            distance=(1-co.similarScore(p,q));
+        }else if(m.equals("3")){
+            int max=Math.max(p.length(),q.length());
+            distance=(1-co.similarScore(p,q))*max;
+        }
         return distance;
     }
 

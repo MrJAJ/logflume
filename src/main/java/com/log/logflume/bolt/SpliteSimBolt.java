@@ -10,7 +10,9 @@ import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 import org.apdplat.word.WordSegmenter;
 import org.apdplat.word.analysis.CosineTextSimilarity;
+import org.apdplat.word.analysis.EditDistanceTextSimilarity;
 import org.apdplat.word.analysis.JaccardTextSimilarity;
+import org.apdplat.word.analysis.TextSimilarity;
 import org.apdplat.word.segmentation.Word;
 import redis.clients.jedis.Jedis;
 
@@ -26,15 +28,35 @@ public class SpliteSimBolt extends BaseRichBolt {
      * kafkaSpout发送的字段名为bytes
      */
     private OutputCollector collector;
-    JaccardTextSimilarity ja;
+    TextSimilarity co;
     SimpleDateFormat sdftime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
     SimpleDateFormat sdfHour = new SimpleDateFormat("yyyyMMdd HH");
     SimpleDateFormat sdfDay = new SimpleDateFormat("yyyyMMdd");
+    double clusterThresold;
 
     @Override
     public void prepare(Map map, TopologyContext topologyContext, OutputCollector outputCollector) {
         this.collector=outputCollector;
-        this.ja=new JaccardTextSimilarity();
+        Jedis jedis = JedisUtil.getJedis();
+        String m=jedis.get("simcommethod");
+        this.co = new CosineTextSimilarity();
+        if(m!=null) {
+            if (m.equals("1")) {
+                this.co = new CosineTextSimilarity();
+            } else if (m.equals("2")) {
+                this.co = new JaccardTextSimilarity();
+            } else if (m.equals("3")) {
+                this.co = new EditDistanceTextSimilarity();
+            }
+        }
+        clusterThresold = 0.5;
+        String k=jedis.get("clusterThresold");
+        jedis.close();
+        if(k!=null){
+            clusterThresold=Double.parseDouble(k);
+        }
+
+
     }
     @Override
     public void execute(Tuple input) {
@@ -59,8 +81,8 @@ public class SpliteSimBolt extends BaseRichBolt {
         Set<String> clu=jedis1.smembers("Clusters");
         jedis1.close();
         for(String c:clu){
-            score=ja.similarScore(message,c);
-            if(score>0.5){
+            score=com(message,c);
+            if(score>clusterThresold){
                 this.collector.emit(new Values(id,time,param,message,c,1));
                 collector.ack(input);
                 return;
@@ -97,6 +119,10 @@ public class SpliteSimBolt extends BaseRichBolt {
             words[i]=list.get(i).getText();
         }
         return words;
+    }
+
+    public double com(String m,String n){
+        return co.similarScore(m,n);
     }
 
 }

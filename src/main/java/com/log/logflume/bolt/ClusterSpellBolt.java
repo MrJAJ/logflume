@@ -22,9 +22,6 @@ public class ClusterSpellBolt extends BaseRichBolt {
      * kafkaSpout发送的字段名为bytes
      */
     private OutputCollector collector;
-    SimpleDateFormat sdftime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-    SimpleDateFormat sdfHour = new SimpleDateFormat("yyyyMMdd HH");
-    SimpleDateFormat sdfDay = new SimpleDateFormat("yyyyMMdd");
 
     @Override
     public void prepare(Map map, TopologyContext topologyContext, OutputCollector outputCollector) {
