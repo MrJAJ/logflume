@@ -1,6 +1,7 @@
 package com.log.logflume.bolt;
 
 import com.log.logflume.Entity.AlarmParam;
+import com.log.logflume.utils.JedisUtil;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -34,7 +35,7 @@ public class KeyWordAlarmBolt extends BaseRichBolt {
     @Override
     public void prepare(Map map, TopologyContext topologyContext, OutputCollector outputCollector) {
         this.collector=outputCollector;
-        Jedis jedis = new Jedis("133.133.135.23", 6379);
+        Jedis jedis = JedisUtil.getJedis();
         String rules = jedis.get("rules");
         jedis.close();
         KieServices kieServices = KieServices.Factory.get();
@@ -52,7 +53,7 @@ public class KeyWordAlarmBolt extends BaseRichBolt {
     }
     @Override
     public void execute(Tuple input) {
-        String text=input.getStringByField("keyWord");
+        String text=input.getStringByField("message");
         AlarmParam param=new AlarmParam();
         param.setKeyWord(text);
         FactHandle handle = ksession.insert(param);

@@ -43,48 +43,48 @@ public class AlarmParam implements Serializable {
     }
 
     public void keyWordAlarm(String message){
-        Jedis jedis = new Jedis("133.133.135.26", 6379);
+        Jedis jedis = new Jedis("127.0.0.1", 6379);
         jedis.hset("Anomy","1\t"+System.currentTimeMillis(),message);
         jedis.close();
     }
 
     public void thresholdAlarm(String message){
-        Jedis jedis = new Jedis("133.133.135.26", 6379);
+        Jedis jedis = new Jedis("127.0.0.1", 6379);
         jedis.hset("Anomy","2\t"+System.currentTimeMillis(),message);
         jedis.close();
     }
 
-    public void errorrateThreshold(String message){
-        Jedis jedis = new Jedis("133.133.135.26", 6379);
+    public void errorrateThresholdAlarm(String message){
+        Jedis jedis = new Jedis("127.0.0.1", 6379);
         jedis.hset("Anomy","2\t"+System.currentTimeMillis(),message);
         jedis.close();
     }
 
     //drl
-//    package com.log.logflume.Entity
+//package com.log.logflume.Entity
 //    import com.log.logflume.Entity.AlarmParam;
 //
 //    rule "rule1"
-//        salience 1
+//    salience 1
 //    when
-//        a:AlarmParam(keyWord matches "ERROR")
+//    a:AlarmParam(keyWord matches ".*异常.*")
 //    then
-//        a.alarm("关键字异常告警"+keyWord);
+//        a.keyWordAlarm("关键字异常告警"+a.getKeyWord());
 //    end
 //
 //    rule "rule2"
-//        salience 1
+//    salience 1
 //    when
-//        a:AlarmParam(errorThreshold >= 10000)
+//    a:AlarmParam(errorThreshold >= 10000)
 //    then
-//        a.alarm("阈值异常，错误日志量高达"+errorThreshold);
+//        a.thresholdAlarm("阈值异常，错误日志量高达"+a.getErrorThreshold());
 //    end
 //
 //    rule "rule3"
-//        salience 1
+//    salience 1
 //    when
-//        a:AlarmParam(errorrateThreshold >= 0.3)
+//    a:AlarmParam(errorrateThreshold >= 0.3)
 //    then
-//        a.alarm("阈值异常，错误率高达"+errorrateThreshold);
+//        a.errorrateThresholdAlarm("阈值异常，错误率高达"+a.getErrorrateThreshold());
 //    end
 }

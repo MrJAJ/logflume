@@ -48,7 +48,6 @@ public class ClusterCountBolt extends BaseRichBolt {
         }
 
         //正则提取表达式
-        String[] params=param.split("\\s");
         updateData(c,hourStr);
         updateData(c,dayStr);
         updateData("ClusterNum",c);

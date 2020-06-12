@@ -28,10 +28,7 @@ public class ExtraCountBolt extends BaseRichBolt {
     }
     @Override
     public void execute(Tuple input) {
-        String id = input.getStringByField("id");
         String time = input.getStringByField("time");
-        String param = input.getStringByField("param");
-        String message = input.getStringByField("message");
 
         Date date=null;
         String hourStr="";
@@ -42,37 +39,14 @@ public class ExtraCountBolt extends BaseRichBolt {
             dayStr = sdfDay.format(date);
         } catch (ParseException e) {
             e.printStackTrace();
-            collector.ack(input);
+            collector.fail(input);
             return;
         }
-
-        //正则提取表达式
-        String[] params=param.split("\\s");
-
-
 //日志量变化
         updateData("LogNum",dayStr);
         updateData("LogNum",hourStr);
-
-        for(int i=0;i<params.length;i++){
-            Jedis jedis = JedisUtil.getJedis();
-            jedis.sadd("extras","params"+i);
-            jedis.sadd("params"+i,params[i]);
-            jedis.close();
-            updateData(params[i],hourStr);
-            updateData(params[i],dayStr);
-        }
         collector.ack(input);
-        //System.out.println(id+"\t"+"message：\t"+message);
-//        Set<String> ex=jedis.smembers("extras");
-//        for(String pa:ex){
-//            Set<String> p=jedis.smembers(pa);
-//            for(String s:p) {
-//                collector.emit(new Values(s, dayStr, jedis.hget(s, dayStr), hourStr, jedis.hget(s, hourStr)));
-//                collector.ack(input);
-//                System.out.println("Hbase save!\t" + s + dayStr + "\t" + jedis.hget(s, dayStr) + "\t" + hourStr + "\t" + jedis.hget(s, hourStr));
-//            }
-//        }
+
     }
 
     @Override

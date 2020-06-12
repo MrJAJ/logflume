@@ -31,6 +31,7 @@ public class ReplaceBolt extends BaseRichBolt {
         String timeRex4="(\\d+-\\d+-\\d+\\s\\d+:\\d+:\\d+)";
         Jedis jedis = JedisUtil.getJedis();
         rexs=jedis.lrange("replaceRex",0,-1);
+
         jedis.close();
         if(rexs==null) {
             rexs = new ArrayList<>();

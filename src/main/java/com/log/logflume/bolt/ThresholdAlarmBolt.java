@@ -1,6 +1,7 @@
 package com.log.logflume.bolt;
 
 import com.log.logflume.Entity.AlarmParam;
+import com.log.logflume.utils.JedisUtil;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -31,18 +32,16 @@ public class ThresholdAlarmBolt extends BaseRichBolt {
      */
     private OutputCollector collector;
     KieSession ksession;
-    SimpleDateFormat sdftime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-    SimpleDateFormat sdfDay = new SimpleDateFormat("yyyyMMdd");
 
     @Override
     public void prepare(Map map, TopologyContext topologyContext, OutputCollector outputCollector) {
         this.collector=outputCollector;
-        Jedis jedis = new Jedis("127.0.0.1", 6379);
+        Jedis jedis = JedisUtil.getJedis();
         String rules = jedis.get("rules");
         jedis.close();
         KieServices kieServices = KieServices.Factory.get();
         KieFileSystem kfs = kieServices.newKieFileSystem();
-        kfs.write("src/main/resources/rules/rules.drl", rules.getBytes());
+        kfs.write("src/main/resources/rules/rules2.drl", rules.getBytes());
         KieBuilder kieBuilder = kieServices.newKieBuilder(kfs).buildAll();
         Results results = kieBuilder.getResults();
         if (results.hasMessages(org.kie.api.builder.Message.Level.ERROR)) {
@@ -55,18 +54,8 @@ public class ThresholdAlarmBolt extends BaseRichBolt {
     }
     @Override
     public void execute(Tuple input) {
-        String time = input.getStringByField("time");
-
-        Date date=null;
-        String dayStr="";
-        try {
-            date=sdftime.parse(time);
-            dayStr = sdfDay.format(date);
-        } catch (ParseException e) {
-            e.printStackTrace();
-            return;
-        }
-        Jedis jedis = new Jedis("127.0.0.1", 6379);
+        String dayStr = input.getStringByField("dayStr");
+        Jedis jedis = JedisUtil.getJedis();
         int errorNum = Integer.parseInt(jedis.hget("ERROR",dayStr));
         int logNum = Integer.parseInt(jedis.hget("LogNum",dayStr));
         jedis.close();
