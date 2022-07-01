@@ -116,7 +116,7 @@
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
-            <version>0.11.0.0</version>
+            <version>0.11.0.2</version>
             <!--需要将zookeeper和log4j的依赖去掉，否则会和storm本身的依赖冲突-->
             <exclusions>
                 <exclusion>
